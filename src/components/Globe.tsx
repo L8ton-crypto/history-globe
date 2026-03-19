@@ -36,8 +36,8 @@ const categoryColors: Record<HistoricalSite['category'], string> = {
 export default function GlobeComponent({ sites, onSiteClick, pointOfView }: GlobeComponentProps) {
   const globeRef = useRef<any>(null);
   const onSiteClickRef = useRef(onSiteClick);
+  const pinElementsRef = useRef<Map<string, { el: HTMLElement; baseSize: number }>>(new Map());
 
-  // Keep callback ref current without re-creating elements
   useEffect(() => {
     onSiteClickRef.current = onSiteClick;
   }, [onSiteClick]);
@@ -48,42 +48,80 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     }
   }, [pointOfView]);
 
-  // Create HTML pin element - fixed screen size regardless of zoom
+  // Listen to camera changes and scale pins based on altitude
+  useEffect(() => {
+    const globe = globeRef.current;
+    if (!globe) return;
+
+    const checkControls = setInterval(() => {
+      const controls = globe.controls?.();
+      if (!controls) return;
+
+      clearInterval(checkControls);
+
+      const updatePinSizes = () => {
+        const pov = globe.pointOfView?.();
+        if (!pov) return;
+
+        const altitude = pov.altitude;
+        // Scale factor: at altitude 2.5 (full globe) = 1.0, at altitude 0.1 (very close) = 0.3
+        const scale = Math.max(0.25, Math.min(1.2, altitude / 2.0));
+
+        pinElementsRef.current.forEach(({ el, baseSize }) => {
+          const scaledSize = Math.max(4, baseSize * scale);
+          el.style.width = `${scaledSize}px`;
+          el.style.height = `${scaledSize}px`;
+        });
+      };
+
+      controls.addEventListener('change', updatePinSizes);
+
+      // Initial sizing
+      updatePinSizes();
+
+      return () => {
+        controls.removeEventListener('change', updatePinSizes);
+      };
+    }, 200);
+
+    return () => clearInterval(checkControls);
+  }, []);
+
   const createPinElement = useCallback((d: object) => {
     const site = d as HistoricalSite;
     const color = categoryColors[site.category];
-    const size = 6 + site.significance * 2; // 8-16px
+    const baseSize = 6 + site.significance * 3; // 9-21px base
 
     const el = document.createElement('div');
-    el.style.width = `${size}px`;
-    el.style.height = `${size}px`;
+    el.style.width = `${baseSize}px`;
+    el.style.height = `${baseSize}px`;
     el.style.borderRadius = '50%';
     el.style.backgroundColor = color;
     el.style.border = '1.5px solid rgba(255,255,255,0.7)';
-    el.style.boxShadow = `0 0 ${size}px ${color}80, 0 0 ${size * 2}px ${color}30`;
+    el.style.boxShadow = `0 0 6px ${color}80, 0 0 12px ${color}30`;
     el.style.cursor = 'pointer';
-    el.style.transition = 'transform 0.2s, box-shadow 0.2s';
+    el.style.transition = 'width 0.15s, height 0.15s, transform 0.2s, box-shadow 0.2s';
     el.style.pointerEvents = 'auto';
 
-    // Hover effect
+    // Track for dynamic resizing
+    pinElementsRef.current.set(site.id, { el, baseSize });
+
     el.addEventListener('mouseenter', () => {
       el.style.transform = 'scale(1.6)';
-      el.style.boxShadow = `0 0 ${size * 2}px ${color}, 0 0 ${size * 3}px ${color}80`;
+      el.style.boxShadow = `0 0 12px ${color}, 0 0 24px ${color}80`;
       el.style.zIndex = '10';
     });
     el.addEventListener('mouseleave', () => {
       el.style.transform = 'scale(1)';
-      el.style.boxShadow = `0 0 ${size}px ${color}80, 0 0 ${size * 2}px ${color}30`;
+      el.style.boxShadow = `0 0 6px ${color}80, 0 0 12px ${color}30`;
       el.style.zIndex = '0';
     });
 
-    // Click handler
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       onSiteClickRef.current(site);
     });
 
-    // Touch handler for mobile
     el.addEventListener('touchend', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -92,6 +130,16 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
 
     return el;
   }, []);
+
+  // Clean up tracked elements when sites change
+  useEffect(() => {
+    const siteIds = new Set(sites.map(s => s.id));
+    pinElementsRef.current.forEach((_, id) => {
+      if (!siteIds.has(id)) {
+        pinElementsRef.current.delete(id);
+      }
+    });
+  }, [sites]);
 
   return (
     <GlobeGL
