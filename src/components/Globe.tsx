@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { HistoricalSite } from '@/data/sites';
 
-// Dynamic import for react-globe.gl to prevent SSR issues
-const Globe = dynamic(() => import('react-globe.gl'), {
+const GlobeGL = dynamic(() => import('react-globe.gl'), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-full">
-      <div className="text-white/70">Loading globe...</div>
+      <div className="text-white/70 text-sm">Loading globe...</div>
     </div>
   ),
 });
@@ -24,10 +23,9 @@ interface GlobeComponentProps {
   };
 }
 
-// Category colors
 const categoryColors: Record<HistoricalSite['category'], string> = {
   roman: '#DC2626',
-  medieval: '#2563EB', 
+  medieval: '#2563EB',
   ancient: '#D97706',
   natural: '#16A34A',
   cultural: '#9333EA',
@@ -37,6 +35,12 @@ const categoryColors: Record<HistoricalSite['category'], string> = {
 
 export default function GlobeComponent({ sites, onSiteClick, pointOfView }: GlobeComponentProps) {
   const globeRef = useRef<any>(null);
+  const onSiteClickRef = useRef(onSiteClick);
+
+  // Keep callback ref current without re-creating elements
+  useEffect(() => {
+    onSiteClickRef.current = onSiteClick;
+  }, [onSiteClick]);
 
   useEffect(() => {
     if (globeRef.current && pointOfView) {
@@ -44,47 +48,69 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     }
   }, [pointOfView]);
 
-  const handlePointClick = (point: any) => {
-    const site = sites.find(s => s.id === point.id);
-    if (site) {
-      onSiteClick(site);
-    }
-  };
+  // Create HTML pin element - fixed screen size regardless of zoom
+  const createPinElement = useCallback((d: object) => {
+    const site = d as HistoricalSite;
+    const color = categoryColors[site.category];
+    const size = 6 + site.significance * 2; // 8-16px
+
+    const el = document.createElement('div');
+    el.style.width = `${size}px`;
+    el.style.height = `${size}px`;
+    el.style.borderRadius = '50%';
+    el.style.backgroundColor = color;
+    el.style.border = '1.5px solid rgba(255,255,255,0.7)';
+    el.style.boxShadow = `0 0 ${size}px ${color}80, 0 0 ${size * 2}px ${color}30`;
+    el.style.cursor = 'pointer';
+    el.style.transition = 'transform 0.2s, box-shadow 0.2s';
+    el.style.pointerEvents = 'auto';
+
+    // Hover effect
+    el.addEventListener('mouseenter', () => {
+      el.style.transform = 'scale(1.6)';
+      el.style.boxShadow = `0 0 ${size * 2}px ${color}, 0 0 ${size * 3}px ${color}80`;
+      el.style.zIndex = '10';
+    });
+    el.addEventListener('mouseleave', () => {
+      el.style.transform = 'scale(1)';
+      el.style.boxShadow = `0 0 ${size}px ${color}80, 0 0 ${size * 2}px ${color}30`;
+      el.style.zIndex = '0';
+    });
+
+    // Click handler
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onSiteClickRef.current(site);
+    });
+
+    // Touch handler for mobile
+    el.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onSiteClickRef.current(site);
+    });
+
+    return el;
+  }, []);
 
   return (
-    <Globe
+    <GlobeGL
       ref={globeRef}
       globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
       bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
       backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-      
-      // Atmosphere
+
       atmosphereColor="#3a82f7"
       atmosphereAltitude={0.15}
-      
-      // Controls
+
       enablePointerInteraction={true}
-      
-      // Points data
-      pointsData={sites}
-      pointLat="lat"
-      pointLng="lng"
-      pointColor={(d: any) => categoryColors[(d as HistoricalSite).category]}
-      pointRadius={(d: any) => Math.max(0.3, (d as HistoricalSite).significance * 0.1)}
-      pointAltitude={0.01}
-      
-      // Interaction
-      onPointClick={handlePointClick}
-      pointLabel={(d: any) => {
-        const site = d as HistoricalSite;
-        return `
-          <div class="bg-black/90 backdrop-blur-xl border border-white/20 rounded-lg p-3 max-w-xs">
-            <div class="text-white font-semibold text-sm">${site.name}</div>
-            <div class="text-white/70 text-xs mt-1">${site.era}</div>
-            <div class="text-white/70 text-xs">${site.country}, ${site.region}</div>
-          </div>
-        `;
-      }}
+
+      htmlElementsData={sites}
+      htmlLat="lat"
+      htmlLng="lng"
+      htmlAltitude={0.01}
+      htmlElement={createPinElement}
+      htmlTransitionDuration={0}
     />
   );
 }
