@@ -52,7 +52,14 @@ export default function InfoPanel({ site, onClose }: InfoPanelProps) {
     setImageError(false);
     setImageUrl(null);
 
-    // Extract Wikipedia article title from the URL
+    // Use cached image from DB if available, otherwise fetch from Wikipedia
+    if (site.imageUrl && site.imageUrl.startsWith('http')) {
+      setImageUrl(site.imageUrl);
+      setImageLoading(false);
+      return;
+    }
+
+    // Fallback: fetch from Wikipedia API
     const wikiTitle = site.wikiUrl.split('/wiki/').pop() || site.name;
 
     fetch(`/api/wiki-image?title=${encodeURIComponent(wikiTitle)}`)
