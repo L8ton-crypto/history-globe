@@ -20,6 +20,8 @@ const categoryColors: Record<HistoricalSite['category'], string> = {
 
 export default function InfoPanel({ site, onClose }: InfoPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
@@ -38,8 +40,36 @@ export default function InfoPanel({ site, onClose }: InfoPanelProps) {
     };
   }, [site, onClose]);
 
+  // Fetch image from Wikipedia API when site changes
   useEffect(() => {
+    if (!site) {
+      setImageUrl(null);
+      setImageError(false);
+      return;
+    }
+
+    setImageLoading(true);
     setImageError(false);
+    setImageUrl(null);
+
+    // Extract Wikipedia article title from the URL
+    const wikiTitle = site.wikiUrl.split('/wiki/').pop() || site.name;
+
+    fetch(`/api/wiki-image?title=${encodeURIComponent(wikiTitle)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.imageUrl) {
+          setImageUrl(data.imageUrl);
+        } else {
+          setImageError(true);
+        }
+      })
+      .catch(() => {
+        setImageError(true);
+      })
+      .finally(() => {
+        setImageLoading(false);
+      });
   }, [site]);
 
   return (
@@ -49,7 +79,6 @@ export default function InfoPanel({ site, onClose }: InfoPanelProps) {
         <div className="fixed inset-0 z-40 bg-black/30 md:bg-transparent" onClick={onClose} />
       )}
 
-      {/* Desktop: side panel from right */}
       <div
         ref={panelRef}
         className={`
@@ -81,14 +110,19 @@ export default function InfoPanel({ site, onClose }: InfoPanelProps) {
             <div className="p-4 md:p-6">
               {/* Image */}
               <div className="relative w-full h-40 md:h-48 mb-3 rounded-lg overflow-hidden">
-                {imageError ? (
+                {imageLoading ? (
+                  <div className="w-full h-full flex items-center justify-center
+                                bg-gradient-to-br from-gray-800 to-gray-900">
+                    <div className="w-6 h-6 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
+                  </div>
+                ) : imageError || !imageUrl ? (
                   <div className="w-full h-full flex items-center justify-center text-white/40 text-sm
                                 bg-gradient-to-br from-gray-800 to-gray-900">
-                    Image not available
+                    No image available
                   </div>
                 ) : (
                   <img
-                    src={site.imageUrl}
+                    src={imageUrl}
                     alt={site.name}
                     className="w-full h-full object-cover"
                     onError={() => setImageError(true)}
