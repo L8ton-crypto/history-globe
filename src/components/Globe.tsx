@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Supercluster from 'supercluster';
 import { HistoricalSite } from '@/data/sites';
 
 const GlobeGL = dynamic(() => import('react-globe.gl'), {
@@ -33,10 +34,28 @@ const categoryColors: Record<HistoricalSite['category'], string> = {
   religious: '#EC4899'
 };
 
+interface ClusterOrSite {
+  id: string;
+  lat: number;
+  lng: number;
+  isCluster: boolean;
+  count: number;
+  site?: HistoricalSite;
+  clusterId?: number;
+  dominantCategory?: HistoricalSite['category'];
+}
+
+// Convert altitude (0.1 - 4.0) to supercluster zoom level (0-20)
+function altitudeToZoom(altitude: number): number {
+  // Higher altitude = lower zoom, closer = higher zoom
+  const zoom = Math.round(14 - Math.log2(altitude * 10));
+  return Math.max(0, Math.min(20, zoom));
+}
+
 export default function GlobeComponent({ sites, onSiteClick, pointOfView }: GlobeComponentProps) {
   const globeRef = useRef<any>(null);
   const onSiteClickRef = useRef(onSiteClick);
-  const pinElementsRef = useRef<Map<string, { el: HTMLElement; baseSize: number }>>(new Map());
+  const [currentZoom, setCurrentZoom] = useState(altitudeToZoom(1.5));
 
   useEffect(() => {
     onSiteClickRef.current = onSiteClick;
@@ -48,7 +67,67 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     }
   }, [pointOfView]);
 
-  // Listen to camera changes and scale pins based on altitude
+  // Build supercluster index
+  const clusterIndex = useMemo(() => {
+    const index = new Supercluster({
+      radius: 60,
+      maxZoom: 16,
+      minZoom: 0,
+    });
+
+    const points = sites.map(site => ({
+      type: 'Feature' as const,
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [site.lng, site.lat]
+      },
+      properties: { site }
+    }));
+
+    index.load(points as any);
+    return index;
+  }, [sites]);
+
+  // Get clusters/points for current zoom level
+  const clustersAndPoints = useMemo((): ClusterOrSite[] => {
+    const raw = clusterIndex.getClusters([-180, -85, 180, 85], currentZoom);
+
+    return raw.map((feature: any) => {
+      if (feature.properties.cluster) {
+        // It's a cluster
+        const leaves = clusterIndex.getLeaves(feature.properties.cluster_id, 100);
+        // Find dominant category
+        const categoryCounts: Record<string, number> = {};
+        leaves.forEach((leaf: any) => {
+          const cat = leaf.properties.site.category;
+          categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+        });
+        const dominant = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0][0] as HistoricalSite['category'];
+
+        return {
+          id: `cluster-${feature.properties.cluster_id}`,
+          lat: feature.geometry.coordinates[1],
+          lng: feature.geometry.coordinates[0],
+          isCluster: true,
+          count: feature.properties.point_count,
+          clusterId: feature.properties.cluster_id,
+          dominantCategory: dominant,
+        };
+      } else {
+        // Individual site
+        return {
+          id: feature.properties.site.id,
+          lat: feature.geometry.coordinates[1],
+          lng: feature.geometry.coordinates[0],
+          isCluster: false,
+          count: 1,
+          site: feature.properties.site,
+        };
+      }
+    });
+  }, [clusterIndex, currentZoom]);
+
+  // Listen to camera and update zoom level
   useEffect(() => {
     const globe = globeRef.current;
     if (!globe) return;
@@ -59,28 +138,21 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
 
       clearInterval(checkControls);
 
-      const updatePinSizes = () => {
+      const onCameraChange = () => {
         const pov = globe.pointOfView?.();
         if (!pov) return;
-
-        const altitude = pov.altitude;
-        // Scale factor: at altitude 2.5 (full globe) = 1.0, at altitude 0.1 (very close) = 0.3
-        const scale = Math.max(0.25, Math.min(1.2, altitude / 2.0));
-
-        pinElementsRef.current.forEach(({ el, baseSize }) => {
-          const scaledSize = Math.max(4, baseSize * scale);
-          el.style.width = `${scaledSize}px`;
-          el.style.height = `${scaledSize}px`;
+        const newZoom = altitudeToZoom(pov.altitude);
+        setCurrentZoom(prev => {
+          if (prev !== newZoom) return newZoom;
+          return prev;
         });
       };
 
-      controls.addEventListener('change', updatePinSizes);
-
-      // Initial sizing
-      updatePinSizes();
+      controls.addEventListener('change', onCameraChange);
+      onCameraChange();
 
       return () => {
-        controls.removeEventListener('change', updatePinSizes);
+        controls.removeEventListener('change', onCameraChange);
       };
     }, 200);
 
@@ -88,58 +160,93 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
   }, []);
 
   const createPinElement = useCallback((d: object) => {
-    const site = d as HistoricalSite;
-    const color = categoryColors[site.category];
-    const baseSize = 6 + site.significance * 3; // 9-21px base
+    const item = d as ClusterOrSite;
 
     const el = document.createElement('div');
-    el.style.width = `${baseSize}px`;
-    el.style.height = `${baseSize}px`;
-    el.style.borderRadius = '50%';
-    el.style.backgroundColor = color;
-    el.style.border = '1.5px solid rgba(255,255,255,0.7)';
-    el.style.boxShadow = `0 0 6px ${color}80, 0 0 12px ${color}30`;
-    el.style.cursor = 'pointer';
-    el.style.transition = 'width 0.15s, height 0.15s, transform 0.2s, box-shadow 0.2s';
     el.style.pointerEvents = 'auto';
+    el.style.cursor = 'pointer';
+    el.style.transition = 'transform 0.2s';
 
-    // Track for dynamic resizing
-    pinElementsRef.current.set(site.id, { el, baseSize });
+    if (item.isCluster) {
+      // Cluster marker - numbered circle
+      const size = Math.min(48, 24 + item.count * 0.5);
+      const color = categoryColors[item.dominantCategory || 'cultural'];
 
-    el.addEventListener('mouseenter', () => {
-      el.style.transform = 'scale(1.6)';
-      el.style.boxShadow = `0 0 12px ${color}, 0 0 24px ${color}80`;
-      el.style.zIndex = '10';
-    });
-    el.addEventListener('mouseleave', () => {
-      el.style.transform = 'scale(1)';
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+      el.style.borderRadius = '50%';
+      el.style.backgroundColor = color;
+      el.style.border = '2px solid rgba(255,255,255,0.9)';
+      el.style.boxShadow = `0 0 10px ${color}80, 0 0 20px ${color}40`;
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.color = 'white';
+      el.style.fontSize = item.count > 99 ? '10px' : '11px';
+      el.style.fontWeight = '700';
+      el.style.fontFamily = 'system-ui, sans-serif';
+      el.style.textShadow = '0 1px 2px rgba(0,0,0,0.5)';
+      el.textContent = `${item.count}`;
+
+      el.addEventListener('mouseenter', () => {
+        el.style.transform = 'scale(1.3)';
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = 'scale(1)';
+      });
+
+      // Click cluster to zoom in
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (globeRef.current) {
+          globeRef.current.pointOfView({ lat: item.lat, lng: item.lng, altitude: Math.max(0.15, globeRef.current.pointOfView().altitude * 0.4) }, 800);
+        }
+      });
+      el.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (globeRef.current) {
+          globeRef.current.pointOfView({ lat: item.lat, lng: item.lng, altitude: Math.max(0.15, globeRef.current.pointOfView().altitude * 0.4) }, 800);
+        }
+      });
+
+    } else {
+      // Individual site pin
+      const site = item.site!;
+      const color = categoryColors[site.category];
+      const size = 6 + site.significance * 2;
+
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+      el.style.borderRadius = '50%';
+      el.style.backgroundColor = color;
+      el.style.border = '1.5px solid rgba(255,255,255,0.7)';
       el.style.boxShadow = `0 0 6px ${color}80, 0 0 12px ${color}30`;
-      el.style.zIndex = '0';
-    });
 
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      onSiteClickRef.current(site);
-    });
+      el.addEventListener('mouseenter', () => {
+        el.style.transform = 'scale(1.6)';
+        el.style.boxShadow = `0 0 12px ${color}, 0 0 24px ${color}80`;
+        el.style.zIndex = '10';
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = 'scale(1)';
+        el.style.boxShadow = `0 0 6px ${color}80, 0 0 12px ${color}30`;
+        el.style.zIndex = '0';
+      });
 
-    el.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      onSiteClickRef.current(site);
-    });
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onSiteClickRef.current(site);
+      });
+      el.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onSiteClickRef.current(site);
+      });
+    }
 
     return el;
   }, []);
-
-  // Clean up tracked elements when sites change
-  useEffect(() => {
-    const siteIds = new Set(sites.map(s => s.id));
-    pinElementsRef.current.forEach((_, id) => {
-      if (!siteIds.has(id)) {
-        pinElementsRef.current.delete(id);
-      }
-    });
-  }, [sites]);
 
   return (
     <GlobeGL
@@ -153,12 +260,12 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
 
       enablePointerInteraction={true}
 
-      htmlElementsData={sites}
+      htmlElementsData={clustersAndPoints}
       htmlLat="lat"
       htmlLng="lng"
       htmlAltitude={0.01}
       htmlElement={createPinElement}
-      htmlTransitionDuration={0}
+      htmlTransitionDuration={300}
     />
   );
 }
