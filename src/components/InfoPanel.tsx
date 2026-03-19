@@ -55,15 +55,10 @@ export default function InfoPanel({ site, onClose }: InfoPanelProps) {
         className={`
           fixed z-50 bg-black/85 backdrop-blur-xl border-white/10 overflow-y-auto
           transition-transform duration-300 ease-in-out
-          
-          /* Mobile: bottom sheet */
           inset-x-0 bottom-0 max-h-[70vh] rounded-t-2xl border-t
-          ${site ? 'translate-y-0' : 'translate-y-full'}
-          
-          /* Desktop: right panel */
-          md:inset-y-0 md:right-0 md:left-auto md:bottom-auto
+          md:inset-x-auto md:inset-y-0 md:right-0 md:left-auto md:bottom-auto
           md:w-96 md:max-h-full md:rounded-t-none md:rounded-none md:border-t-0 md:border-l
-          md:${site ? 'translate-x-0 translate-y-0' : 'translate-x-full translate-y-0'}
+          ${site ? 'translate-y-0 md:translate-x-0 md:translate-y-0' : 'translate-y-full md:translate-y-0 md:translate-x-full'}
         `}
       >
         {site && (

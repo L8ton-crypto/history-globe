@@ -1,18 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
-import Supercluster from 'supercluster';
+import { useEffect, useRef, useCallback } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { HistoricalSite } from '@/data/sites';
-
-const GlobeGL = dynamic(() => import('react-globe.gl'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-full">
-      <div className="text-white/70 text-sm">Loading globe...</div>
-    </div>
-  ),
-});
 
 interface GlobeComponentProps {
   sites: HistoricalSite[];
@@ -34,260 +25,283 @@ const categoryColors: Record<HistoricalSite['category'], string> = {
   religious: '#EC4899'
 };
 
-interface ClusterOrSite {
-  id: string;
-  lat: number;
-  lng: number;
-  isCluster: boolean;
-  count: number;
-  site?: HistoricalSite;
-  clusterId?: number;
-  dominantCategory?: HistoricalSite['category'];
-}
-
+// Convert altitude (react-globe.gl scale) to mapbox zoom
 function altitudeToZoom(altitude: number): number {
-  const zoom = Math.round(14 - Math.log2(altitude * 10));
-  return Math.max(0, Math.min(20, zoom));
+  return Math.max(1, Math.min(18, 10 - Math.log2(altitude * 5)));
 }
-
-// Higher res earth textures from Solar System Scope (8k, free for non-commercial)
-const EARTH_TEXTURE = 'https://unpkg.com/three-globe@2.41.12/example/img/earth-blue-marble.jpg';
-const EARTH_BUMP = 'https://unpkg.com/three-globe@2.41.12/example/img/earth-topology.png';
-const NIGHT_SKY = 'https://unpkg.com/three-globe@2.41.12/example/img/night-sky.png';
 
 export default function GlobeComponent({ sites, onSiteClick, pointOfView }: GlobeComponentProps) {
-  const globeRef = useRef<any>(null);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
   const onSiteClickRef = useRef(onSiteClick);
-  const [currentZoom, setCurrentZoom] = useState(altitudeToZoom(1.5));
+  const sitesMapRef = useRef<Map<string, HistoricalSite>>(new Map());
 
   useEffect(() => {
     onSiteClickRef.current = onSiteClick;
   }, [onSiteClick]);
 
+  // Build sites lookup
   useEffect(() => {
-    if (globeRef.current && pointOfView) {
-      globeRef.current.pointOfView(pointOfView, 1000);
-    }
-  }, [pointOfView]);
-
-  // Increase globe resolution for sharper zoom
-  useEffect(() => {
-    const globe = globeRef.current;
-    if (!globe) return;
-
-    const checkReady = setInterval(() => {
-      const scene = globe.scene?.();
-      if (!scene) return;
-      clearInterval(checkReady);
-
-      // Find the globe mesh and increase geometry segments for smoother sphere at close zoom
-      scene.traverse((obj: any) => {
-        if (obj.isMesh && obj.geometry?.parameters?.widthSegments) {
-          // Default is usually 75 segments - higher = smoother at close range
-          // but we can't easily change geometry after creation
-        }
-        // Improve texture filtering
-        if (obj.material?.map) {
-          obj.material.map.anisotropy = 16;
-          obj.material.map.needsUpdate = true;
-        }
-      });
-
-      // Increase renderer pixel ratio for sharper rendering
-      const renderer = globe.renderer?.();
-      if (renderer) {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3));
-      }
-    }, 300);
-
-    return () => clearInterval(checkReady);
-  }, []);
-
-  const clusterIndex = useMemo(() => {
-    const index = new Supercluster({
-      radius: 60,
-      maxZoom: 16,
-      minZoom: 0,
-    });
-
-    const points = sites.map(site => ({
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Point' as const,
-        coordinates: [site.lng, site.lat]
-      },
-      properties: { site }
-    }));
-
-    index.load(points as any);
-    return index;
+    const m = new Map<string, HistoricalSite>();
+    sites.forEach(s => m.set(s.id, s));
+    sitesMapRef.current = m;
   }, [sites]);
 
-  const clustersAndPoints = useMemo((): ClusterOrSite[] => {
-    const raw = clusterIndex.getClusters([-180, -85, 180, 85], currentZoom);
-
-    return raw.map((feature: any) => {
-      if (feature.properties.cluster) {
-        const leaves = clusterIndex.getLeaves(feature.properties.cluster_id, 100);
-        const categoryCounts: Record<string, number> = {};
-        leaves.forEach((leaf: any) => {
-          const cat = leaf.properties.site.category;
-          categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-        });
-        const dominant = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0][0] as HistoricalSite['category'];
-
-        return {
-          id: `cluster-${feature.properties.cluster_id}`,
-          lat: feature.geometry.coordinates[1],
-          lng: feature.geometry.coordinates[0],
-          isCluster: true,
-          count: feature.properties.point_count,
-          clusterId: feature.properties.cluster_id,
-          dominantCategory: dominant,
-        };
-      } else {
-        return {
-          id: feature.properties.site.id,
-          lat: feature.geometry.coordinates[1],
-          lng: feature.geometry.coordinates[0],
-          isCluster: false,
-          count: 1,
-          site: feature.properties.site,
-        };
-      }
-    });
-  }, [clusterIndex, currentZoom]);
-
+  // Initialize map
   useEffect(() => {
-    const globe = globeRef.current;
-    if (!globe) return;
+    if (!mapContainer.current) return;
 
-    const checkControls = setInterval(() => {
-      const controls = globe.controls?.();
-      if (!controls) return;
-
-      clearInterval(checkControls);
-
-      const onCameraChange = () => {
-        const pov = globe.pointOfView?.();
-        if (!pov) return;
-        const newZoom = altitudeToZoom(pov.altitude);
-        setCurrentZoom(prev => {
-          if (prev !== newZoom) return newZoom;
-          return prev;
-        });
-      };
-
-      controls.addEventListener('change', onCameraChange);
-      onCameraChange();
-    }, 200);
-
-    return () => clearInterval(checkControls);
-  }, []);
-
-  const createPinElement = useCallback((d: object) => {
-    const item = d as ClusterOrSite;
-
-    const el = document.createElement('div');
-    el.style.pointerEvents = 'auto';
-    el.style.cursor = 'pointer';
-    el.style.transition = 'transform 0.2s';
-
-    if (item.isCluster) {
-      const size = Math.min(48, 24 + item.count * 0.5);
-      const color = categoryColors[item.dominantCategory || 'cultural'];
-
-      el.style.width = `${size}px`;
-      el.style.height = `${size}px`;
-      el.style.borderRadius = '50%';
-      el.style.backgroundColor = color;
-      el.style.border = '2px solid rgba(255,255,255,0.9)';
-      el.style.boxShadow = `0 0 10px ${color}80, 0 0 20px ${color}40`;
-      el.style.display = 'flex';
-      el.style.alignItems = 'center';
-      el.style.justifyContent = 'center';
-      el.style.color = 'white';
-      el.style.fontSize = item.count > 99 ? '10px' : '11px';
-      el.style.fontWeight = '700';
-      el.style.fontFamily = 'system-ui, sans-serif';
-      el.style.textShadow = '0 1px 2px rgba(0,0,0,0.5)';
-      el.textContent = `${item.count}`;
-
-      el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.3)'; });
-      el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
-
-      const zoomToCluster = (e: Event) => {
-        e.stopPropagation();
-        e.preventDefault();
-        if (globeRef.current) {
-          const currentAlt = globeRef.current.pointOfView().altitude;
-          globeRef.current.pointOfView({
-            lat: item.lat,
-            lng: item.lng,
-            altitude: Math.max(0.1, currentAlt * 0.35)
-          }, 800);
-        }
-      };
-      el.addEventListener('click', zoomToCluster);
-      el.addEventListener('touchend', zoomToCluster);
-
-    } else {
-      const site = item.site!;
-      const color = categoryColors[site.category];
-      const size = 6 + site.significance * 2;
-
-      el.style.width = `${size}px`;
-      el.style.height = `${size}px`;
-      el.style.borderRadius = '50%';
-      el.style.backgroundColor = color;
-      el.style.border = '1.5px solid rgba(255,255,255,0.7)';
-      el.style.boxShadow = `0 0 6px ${color}80, 0 0 12px ${color}30`;
-
-      el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.6)';
-        el.style.boxShadow = `0 0 12px ${color}, 0 0 24px ${color}80`;
-        el.style.zIndex = '10';
-      });
-      el.addEventListener('mouseleave', () => {
-        el.style.transform = 'scale(1)';
-        el.style.boxShadow = `0 0 6px ${color}80, 0 0 12px ${color}30`;
-        el.style.zIndex = '0';
-      });
-
-      const selectSite = (e: Event) => {
-        e.stopPropagation();
-        e.preventDefault();
-        onSiteClickRef.current(site);
-      };
-      el.addEventListener('click', selectSite);
-      el.addEventListener('touchend', selectSite);
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) {
+      console.error('Missing NEXT_PUBLIC_MAPBOX_TOKEN');
+      return;
     }
 
-    return el;
+    mapboxgl.accessToken = token;
+
+    const m = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      center: [-3, 52], // Wales
+      zoom: 4,
+      projection: 'globe',
+      attributionControl: false,
+    });
+
+    // Globe atmosphere
+    m.on('style.load', () => {
+      m.setFog({
+        color: 'rgb(10, 10, 30)',
+        'high-color': 'rgb(20, 20, 60)',
+        'horizon-blend': 0.08,
+        'space-color': 'rgb(5, 5, 15)',
+        'star-intensity': 0.6,
+      });
+    });
+
+    m.on('load', () => {
+      // Add site data as GeoJSON source with clustering
+      const geojson: GeoJSON.FeatureCollection = {
+        type: 'FeatureCollection',
+        features: sites.map(site => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [site.lng, site.lat]
+          },
+          properties: {
+            id: site.id,
+            name: site.name,
+            category: site.category,
+            significance: site.significance,
+            color: categoryColors[site.category],
+          }
+        }))
+      };
+
+      m.addSource('sites', {
+        type: 'geojson',
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 12,
+        clusterRadius: 50,
+      });
+
+      // Cluster circles
+      m.addLayer({
+        id: 'clusters',
+        type: 'circle',
+        source: 'sites',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            '#6366f1', // < 10
+            10, '#8b5cf6', // 10-25
+            25, '#a855f7', // 25-50
+            50, '#c026d3', // 50+
+          ],
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            18,   // < 10
+            10, 22, // 10-25
+            25, 28, // 25-50
+            50, 34, // 50+
+          ],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': 'rgba(255, 255, 255, 0.8)',
+        }
+      });
+
+      // Cluster count labels
+      m.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'sites',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 13,
+        },
+        paint: {
+          'text-color': '#ffffff',
+        }
+      });
+
+      // Individual site pins
+      m.addLayer({
+        id: 'unclustered-point',
+        type: 'circle',
+        source: 'sites',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': [
+            'interpolate', ['linear'], ['get', 'significance'],
+            1, 5,
+            3, 7,
+            5, 10,
+          ],
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': 'rgba(255, 255, 255, 0.8)',
+        }
+      });
+
+      // Click cluster → zoom in
+      m.on('click', 'clusters', (e) => {
+        const features = m.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+        if (!features.length) return;
+        const clusterId = features[0].properties?.cluster_id;
+        const source = m.getSource('sites') as mapboxgl.GeoJSONSource;
+        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+          if (err) return;
+          const geometry = features[0].geometry;
+          if (geometry.type === 'Point') {
+            m.easeTo({
+              center: geometry.coordinates as [number, number],
+              zoom: zoom ?? undefined,
+            });
+          }
+        });
+      });
+
+      // Click individual site → info panel
+      m.on('click', 'unclustered-point', (e) => {
+        const features = m.queryRenderedFeatures(e.point, { layers: ['unclustered-point'] });
+        if (!features.length) return;
+        const siteId = features[0].properties?.id;
+        const site = sitesMapRef.current.get(siteId);
+        if (site) {
+          onSiteClickRef.current(site);
+        }
+      });
+
+      // Hover cursor changes
+      m.on('mouseenter', 'clusters', () => { m.getCanvas().style.cursor = 'pointer'; });
+      m.on('mouseleave', 'clusters', () => { m.getCanvas().style.cursor = ''; });
+      m.on('mouseenter', 'unclustered-point', () => { m.getCanvas().style.cursor = 'pointer'; });
+      m.on('mouseleave', 'unclustered-point', () => { m.getCanvas().style.cursor = ''; });
+
+      // Site name popup on hover
+      const popup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        className: 'site-popup',
+        offset: 12,
+      });
+
+      m.on('mouseenter', 'unclustered-point', (e) => {
+        const features = m.queryRenderedFeatures(e.point, { layers: ['unclustered-point'] });
+        if (!features.length) return;
+        const geometry = features[0].geometry;
+        if (geometry.type === 'Point') {
+          const name = features[0].properties?.name || '';
+          popup
+            .setLngLat(geometry.coordinates as [number, number])
+            .setHTML(`<div style="font-weight:600;font-size:13px;">${name}</div>`)
+            .addTo(m);
+        }
+      });
+
+      m.on('mouseleave', 'unclustered-point', () => {
+        popup.remove();
+      });
+    });
+
+    // Navigation controls
+    m.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'bottom-right');
+
+    map.current = m;
+
+    return () => {
+      m.remove();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Update data when sites change (filtering)
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !m.isStyleLoaded()) return;
+
+    const source = m.getSource('sites') as mapboxgl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    const geojson: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: sites.map(site => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [site.lng, site.lat]
+        },
+        properties: {
+          id: site.id,
+          name: site.name,
+          category: site.category,
+          significance: site.significance,
+          color: categoryColors[site.category],
+        }
+      }))
+    };
+
+    source.setData(geojson);
+  }, [sites]);
+
+  // Fly to point of view when it changes
+  useEffect(() => {
+    if (!map.current || !pointOfView) return;
+
+    map.current.flyTo({
+      center: [pointOfView.lng, pointOfView.lat],
+      zoom: altitudeToZoom(pointOfView.altitude),
+      duration: 1500,
+    });
+  }, [pointOfView]);
+
   return (
-    <div className="w-full h-full" style={{ position: 'relative' }}>
-      <GlobeGL
-        ref={globeRef}
-        globeImageUrl={EARTH_TEXTURE}
-        bumpImageUrl={EARTH_BUMP}
-        backgroundImageUrl={NIGHT_SKY}
-
-        atmosphereColor="#3a82f7"
-        atmosphereAltitude={0.15}
-
-        enablePointerInteraction={true}
-
-        htmlElementsData={clustersAndPoints}
-        htmlLat="lat"
-        htmlLng="lng"
-        htmlAltitude={0.01}
-        htmlElement={createPinElement}
-        htmlTransitionDuration={300}
-
-        animateIn={true}
-      />
-    </div>
+    <>
+      <div ref={mapContainer} className="w-full h-full" />
+      <style jsx global>{`
+        .mapboxgl-popup-content {
+          background: rgba(0, 0, 0, 0.85) !important;
+          color: white !important;
+          border-radius: 8px !important;
+          padding: 8px 12px !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          backdrop-filter: blur(10px) !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+        }
+        .mapboxgl-popup-tip {
+          border-top-color: rgba(0, 0, 0, 0.85) !important;
+        }
+        .mapboxgl-ctrl-attrib {
+          display: none !important;
+        }
+      `}</style>
+    </>
   );
 }
