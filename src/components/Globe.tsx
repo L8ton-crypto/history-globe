@@ -8,6 +8,7 @@ import { HistoricalSite } from '@/data/sites';
 interface GlobeComponentProps {
   sites: HistoricalSite[];
   onSiteClick: (site: HistoricalSite) => void;
+  onBoundsChange?: (bounds: { south: number; north: number; west: number; east: number; zoom: number }) => void;
   pointOfView?: {
     lat: number;
     lng: number;
@@ -25,22 +26,20 @@ const categoryColors: Record<HistoricalSite['category'], string> = {
   religious: '#EC4899'
 };
 
-// Convert altitude (react-globe.gl scale) to mapbox zoom
 function altitudeToZoom(altitude: number): number {
   return Math.max(1, Math.min(18, 10 - Math.log2(altitude * 5)));
 }
 
-export default function GlobeComponent({ sites, onSiteClick, pointOfView }: GlobeComponentProps) {
+export default function GlobeComponent({ sites, onSiteClick, onBoundsChange, pointOfView }: GlobeComponentProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const onSiteClickRef = useRef(onSiteClick);
+  const onBoundsChangeRef = useRef(onBoundsChange);
   const sitesMapRef = useRef<Map<string, HistoricalSite>>(new Map());
 
-  useEffect(() => {
-    onSiteClickRef.current = onSiteClick;
-  }, [onSiteClick]);
+  useEffect(() => { onSiteClickRef.current = onSiteClick; }, [onSiteClick]);
+  useEffect(() => { onBoundsChangeRef.current = onBoundsChange; }, [onBoundsChange]);
 
-  // Build sites lookup
   useEffect(() => {
     const m = new Map<string, HistoricalSite>();
     sites.forEach(s => m.set(s.id, s));
@@ -52,23 +51,19 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     if (!mapContainer.current) return;
 
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) {
-      console.error('Missing NEXT_PUBLIC_MAPBOX_TOKEN');
-      return;
-    }
+    if (!token) return;
 
     mapboxgl.accessToken = token;
 
     const m = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: [-3, 52], // Wales
+      center: [-3, 52],
       zoom: 4,
       projection: 'globe',
       attributionControl: false,
     });
 
-    // Globe atmosphere
     m.on('style.load', () => {
       m.setFog({
         color: 'rgb(10, 10, 30)',
@@ -80,30 +75,12 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     });
 
     m.on('load', () => {
-      // Add site data as GeoJSON source with clustering
-      const geojson: GeoJSON.FeatureCollection = {
-        type: 'FeatureCollection',
-        features: sites.map(site => ({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [site.lng, site.lat]
-          },
-          properties: {
-            id: site.id,
-            name: site.name,
-            category: site.category,
-            significance: site.significance,
-            color: categoryColors[site.category],
-          }
-        }))
-      };
-
+      // GeoJSON source with clustering
       m.addSource('sites', {
         type: 'geojson',
-        data: geojson,
+        data: { type: 'FeatureCollection', features: [] },
         cluster: true,
-        clusterMaxZoom: 12,
+        clusterMaxZoom: 14,
         clusterRadius: 50,
       });
 
@@ -115,27 +92,18 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
         filter: ['has', 'point_count'],
         paint: {
           'circle-color': [
-            'step',
-            ['get', 'point_count'],
-            '#6366f1', // < 10
-            10, '#8b5cf6', // 10-25
-            25, '#a855f7', // 25-50
-            50, '#c026d3', // 50+
+            'step', ['get', 'point_count'],
+            '#6366f1', 10, '#8b5cf6', 25, '#a855f7', 50, '#c026d3',
           ],
           'circle-radius': [
-            'step',
-            ['get', 'point_count'],
-            18,   // < 10
-            10, 22, // 10-25
-            25, 28, // 25-50
-            50, 34, // 50+
+            'step', ['get', 'point_count'],
+            18, 10, 22, 25, 28, 50, 34,
           ],
           'circle-stroke-width': 2,
           'circle-stroke-color': 'rgba(255, 255, 255, 0.8)',
         }
       });
 
-      // Cluster count labels
       m.addLayer({
         id: 'cluster-count',
         type: 'symbol',
@@ -146,12 +114,10 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
           'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
           'text-size': 13,
         },
-        paint: {
-          'text-color': '#ffffff',
-        }
+        paint: { 'text-color': '#ffffff' }
       });
 
-      // Individual site pins
+      // Individual pins
       m.addLayer({
         id: 'unclustered-point',
         type: 'circle',
@@ -161,16 +127,14 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
           'circle-color': ['get', 'color'],
           'circle-radius': [
             'interpolate', ['linear'], ['get', 'significance'],
-            1, 5,
-            3, 7,
-            5, 10,
+            1, 5, 3, 7, 5, 10,
           ],
           'circle-stroke-width': 1.5,
           'circle-stroke-color': 'rgba(255, 255, 255, 0.8)',
         }
       });
 
-      // Click cluster → zoom in
+      // Click handlers
       m.on('click', 'clusters', (e) => {
         const features = m.queryRenderedFeatures(e.point, { layers: ['clusters'] });
         if (!features.length) return;
@@ -180,69 +144,66 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
           if (err) return;
           const geometry = features[0].geometry;
           if (geometry.type === 'Point') {
-            m.easeTo({
-              center: geometry.coordinates as [number, number],
-              zoom: zoom ?? undefined,
-            });
+            m.easeTo({ center: geometry.coordinates as [number, number], zoom: zoom ?? undefined });
           }
         });
       });
 
-      // Click individual site → info panel
       m.on('click', 'unclustered-point', (e) => {
         const features = m.queryRenderedFeatures(e.point, { layers: ['unclustered-point'] });
         if (!features.length) return;
         const siteId = features[0].properties?.id;
         const site = sitesMapRef.current.get(siteId);
-        if (site) {
-          onSiteClickRef.current(site);
-        }
+        if (site) onSiteClickRef.current(site);
       });
 
-      // Hover cursor changes
+      // Cursors
       m.on('mouseenter', 'clusters', () => { m.getCanvas().style.cursor = 'pointer'; });
       m.on('mouseleave', 'clusters', () => { m.getCanvas().style.cursor = ''; });
       m.on('mouseenter', 'unclustered-point', () => { m.getCanvas().style.cursor = 'pointer'; });
       m.on('mouseleave', 'unclustered-point', () => { m.getCanvas().style.cursor = ''; });
 
-      // Site name popup on hover
-      const popup = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        className: 'site-popup',
-        offset: 12,
-      });
-
+      // Hover tooltip
+      const popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, className: 'site-popup', offset: 12 });
       m.on('mouseenter', 'unclustered-point', (e) => {
         const features = m.queryRenderedFeatures(e.point, { layers: ['unclustered-point'] });
         if (!features.length) return;
         const geometry = features[0].geometry;
         if (geometry.type === 'Point') {
-          const name = features[0].properties?.name || '';
-          popup
-            .setLngLat(geometry.coordinates as [number, number])
-            .setHTML(`<div style="font-weight:600;font-size:13px;">${name}</div>`)
+          popup.setLngLat(geometry.coordinates as [number, number])
+            .setHTML(`<div style="font-weight:600;font-size:13px;">${features[0].properties?.name || ''}</div>`)
             .addTo(m);
         }
       });
+      m.on('mouseleave', 'unclustered-point', () => { popup.remove(); });
 
-      m.on('mouseleave', 'unclustered-point', () => {
-        popup.remove();
-      });
+      // Report initial bounds
+      reportBounds(m);
     });
 
-    // Navigation controls
+    // Report bounds on move
+    const reportBounds = (map: mapboxgl.Map) => {
+      const bounds = map.getBounds();
+      if (!bounds) return;
+      onBoundsChangeRef.current?.({
+        south: bounds.getSouth(),
+        north: bounds.getNorth(),
+        west: bounds.getWest(),
+        east: bounds.getEast(),
+        zoom: Math.round(map.getZoom()),
+      });
+    };
+
+    m.on('moveend', () => reportBounds(m));
+
     m.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'bottom-right');
 
     map.current = m;
-
-    return () => {
-      m.remove();
-    };
+    return () => { m.remove(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update data when sites change (filtering)
+  // Update GeoJSON data when sites change
   useEffect(() => {
     const m = map.current;
     if (!m || !m.isStyleLoaded()) return;
@@ -254,10 +215,7 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
       type: 'FeatureCollection',
       features: sites.map(site => ({
         type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [site.lng, site.lat]
-        },
+        geometry: { type: 'Point', coordinates: [site.lng, site.lat] },
         properties: {
           id: site.id,
           name: site.name,
@@ -271,10 +229,9 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     source.setData(geojson);
   }, [sites]);
 
-  // Fly to point of view when it changes
+  // Fly to point of view
   useEffect(() => {
     if (!map.current || !pointOfView) return;
-
     map.current.flyTo({
       center: [pointOfView.lng, pointOfView.lat],
       zoom: altitudeToZoom(pointOfView.altitude),
@@ -295,12 +252,8 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
           backdrop-filter: blur(10px) !important;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
         }
-        .mapboxgl-popup-tip {
-          border-top-color: rgba(0, 0, 0, 0.85) !important;
-        }
-        .mapboxgl-ctrl-attrib {
-          display: none !important;
-        }
+        .mapboxgl-popup-tip { border-top-color: rgba(0, 0, 0, 0.85) !important; }
+        .mapboxgl-ctrl-attrib { display: none !important; }
       `}</style>
     </>
   );

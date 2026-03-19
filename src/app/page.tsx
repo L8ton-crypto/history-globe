@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { historicalSites, HistoricalSite } from '@/data/sites';
-import { importedSites } from '@/data/imported-sites';
-
-// Merge manual + imported sites
-const allSites = [...historicalSites, ...importedSites];
+import { HistoricalSite } from '@/data/sites';
+import { useSites } from '@/hooks/useSites';
 import GlobeComponent from '@/components/Globe';
 import InfoPanel from '@/components/InfoPanel';
 import Controls from '@/components/Controls';
@@ -30,30 +27,34 @@ const categories = [
   { key: 'religious' as const, label: 'Religious' },
 ];
 
+interface Bounds {
+  south: number;
+  north: number;
+  west: number;
+  east: number;
+  zoom: number;
+}
+
 export default function Home() {
   const [selectedSite, setSelectedSite] = useState<HistoricalSite | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<HistoricalSite['category']>>(
     new Set(['roman', 'medieval', 'ancient', 'natural', 'cultural', 'industrial', 'religious'])
   );
   const [searchQuery, setSearchQuery] = useState('');
-  const [pointOfView, setPointOfView] = useState<{lat: number; lng: number; altitude: number}>({
-    lat: 52,
-    lng: -3,
-    altitude: 1.5
-  });
+  const [bounds, setBounds] = useState<Bounds | null>(null);
+  const [pointOfView, setPointOfView] = useState<{lat: number; lng: number; altitude: number} | undefined>(undefined);
 
+  // Fetch sites from database based on current viewport
+  const fetchOptions = useMemo(() => ({
+    search: searchQuery.trim() || undefined,
+  }), [searchQuery]);
+
+  const { sites: dbSites, loading, total } = useSites(bounds, fetchOptions);
+
+  // Filter by active categories on the client side
   const filteredSites = useMemo(() => {
-    let filtered = allSites.filter(site => activeCategories.has(site.category));
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(site =>
-        site.name.toLowerCase().includes(query) ||
-        site.country.toLowerCase().includes(query) ||
-        site.region.toLowerCase().includes(query)
-      );
-    }
-    return filtered;
-  }, [activeCategories, searchQuery]);
+    return dbSites.filter(site => activeCategories.has(site.category));
+  }, [dbSites, activeCategories]);
 
   const handleCategoryToggle = useCallback((category: HistoricalSite['category']) => {
     setActiveCategories(prev => {
@@ -69,7 +70,10 @@ export default function Home() {
 
   const handleSiteClick = useCallback((site: HistoricalSite) => {
     setSelectedSite(site);
-    // Don't change zoom - just open the info panel
+  }, []);
+
+  const handleBoundsChange = useCallback((newBounds: Bounds) => {
+    setBounds(newBounds);
   }, []);
 
   const handleNearMe = useCallback(() => {
@@ -100,25 +104,35 @@ export default function Home() {
 
   return (
     <div className="h-screen w-full bg-[#0a0a0a] relative overflow-hidden">
-      {/* Title - smaller on mobile */}
+      {/* Title */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
         <h1 className="text-white text-lg md:text-2xl font-bold tracking-wide opacity-80">
           🌍 HistoryGlobe
         </h1>
       </div>
 
-      {/* Globe - z-10 so pins stay below controls (z-40) */}
+      {/* Loading indicator */}
+      {loading && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+          <div className="bg-black/60 backdrop-blur px-3 py-1 rounded-full text-white/70 text-xs">
+            Loading sites...
+          </div>
+        </div>
+      )}
+
+      {/* Globe */}
       <div className="absolute inset-0 z-10">
         <GlobeComponent
           sites={filteredSites}
           onSiteClick={handleSiteClick}
+          onBoundsChange={handleBoundsChange}
           pointOfView={pointOfView}
         />
       </div>
 
       {/* Controls */}
       <Controls
-        sites={allSites}
+        sites={filteredSites}
         activeCategories={activeCategories}
         searchQuery={searchQuery}
         filteredSites={filteredSites}
@@ -129,9 +143,11 @@ export default function Home() {
         onResetView={handleResetView}
       />
 
-      {/* Category Legend - hidden on mobile, shown on desktop */}
+      {/* Category Legend - desktop only */}
       <div className="hidden md:block fixed bottom-4 left-4 z-30 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3">
-        <div className="text-white/60 text-xs font-medium mb-2">Legend</div>
+        <div className="text-white/60 text-xs font-medium mb-2">
+          {total > 0 ? `${filteredSites.length} sites in view` : 'Legend'}
+        </div>
         <div className="grid grid-cols-1 gap-1.5 text-xs">
           {categories.map(category => (
             <div key={category.key} className="flex items-center gap-2">
