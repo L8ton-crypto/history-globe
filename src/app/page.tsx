@@ -69,7 +69,7 @@ export default function Home() {
 
   const handleSiteClick = useCallback((site: HistoricalSite) => {
     setSelectedSite(site);
-    setPointOfView({ lat: site.lat, lng: site.lng, altitude: 0.8 });
+    // Don't change zoom - just open the info panel
   }, []);
 
   const handleNearMe = useCallback(() => {
