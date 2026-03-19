@@ -6,10 +6,9 @@ import GlobeComponent from '@/components/Globe';
 import InfoPanel from '@/components/InfoPanel';
 import Controls from '@/components/Controls';
 
-// Category colors for legend
 const categoryColors: Record<HistoricalSite['category'], string> = {
   roman: '#DC2626',
-  medieval: '#2563EB', 
+  medieval: '#2563EB',
   ancient: '#D97706',
   natural: '#16A34A',
   cultural: '#9333EA',
@@ -28,7 +27,6 @@ const categories = [
 ];
 
 export default function Home() {
-  // State
   const [selectedSite, setSelectedSite] = useState<HistoricalSite | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<HistoricalSite['category']>>(
     new Set(['roman', 'medieval', 'ancient', 'natural', 'cultural', 'industrial', 'religious'])
@@ -40,10 +38,8 @@ export default function Home() {
     altitude: 1.5
   });
 
-  // Filter sites based on active categories and search
   const filteredSites = useMemo(() => {
     let filtered = historicalSites.filter(site => activeCategories.has(site.category));
-    
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(site =>
@@ -52,11 +48,9 @@ export default function Home() {
         site.region.toLowerCase().includes(query)
       );
     }
-    
     return filtered;
   }, [activeCategories, searchQuery]);
 
-  // Event handlers
   const handleCategoryToggle = useCallback((category: HistoricalSite['category']) => {
     setActiveCategories(prev => {
       const newSet = new Set(prev);
@@ -71,17 +65,8 @@ export default function Home() {
 
   const handleSiteClick = useCallback((site: HistoricalSite) => {
     setSelectedSite(site);
-    // Zoom to site
-    setPointOfView({
-      lat: site.lat,
-      lng: site.lng,
-      altitude: 0.8
-    });
+    setPointOfView({ lat: site.lat, lng: site.lng, altitude: 0.8 });
   }, []);
-
-  const handleSiteSelect = useCallback((site: HistoricalSite) => {
-    handleSiteClick(site);
-  }, [handleSiteClick]);
 
   const handleNearMe = useCallback(() => {
     if ('geolocation' in navigator) {
@@ -93,20 +78,15 @@ export default function Home() {
             altitude: 1.0
           });
         },
-        (error) => {
-          console.warn('Geolocation failed:', error);
-          alert('Unable to get your location. Please enable location access and try again.');
+        () => {
+          alert('Unable to get your location. Please enable location access.');
         }
       );
     }
   }, []);
 
   const handleResetView = useCallback(() => {
-    setPointOfView({
-      lat: 52,
-      lng: -3,
-      altitude: 1.5
-    });
+    setPointOfView({ lat: 52, lng: -3, altitude: 1.5 });
     setSelectedSite(null);
   }, []);
 
@@ -116,9 +96,9 @@ export default function Home() {
 
   return (
     <div className="h-screen w-full bg-[#0a0a0a] relative overflow-hidden">
-      {/* Title */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-        <h1 className="text-white text-2xl font-bold tracking-wide">
+      {/* Title - smaller on mobile */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+        <h1 className="text-white text-lg md:text-2xl font-bold tracking-wide opacity-80">
           🌍 HistoryGlobe
         </h1>
       </div>
@@ -140,22 +120,22 @@ export default function Home() {
         filteredSites={filteredSites}
         onCategoryToggle={handleCategoryToggle}
         onSearchChange={setSearchQuery}
-        onSiteSelect={handleSiteSelect}
+        onSiteSelect={handleSiteClick}
         onNearMe={handleNearMe}
         onResetView={handleResetView}
       />
 
-      {/* Category Legend */}
-      <div className="fixed bottom-4 left-4 z-30 bg-black/70 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-        <div className="text-white text-sm font-medium mb-3">Legend</div>
-        <div className="grid grid-cols-1 gap-2 text-xs">
+      {/* Category Legend - hidden on mobile, shown on desktop */}
+      <div className="hidden md:block fixed bottom-4 left-4 z-30 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3">
+        <div className="text-white/60 text-xs font-medium mb-2">Legend</div>
+        <div className="grid grid-cols-1 gap-1.5 text-xs">
           {categories.map(category => (
             <div key={category.key} className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded-full"
+              <div
+                className="w-2.5 h-2.5 rounded-full"
                 style={{ backgroundColor: categoryColors[category.key] }}
               />
-              <span className="text-white/80">{category.label}</span>
+              <span className="text-white/70">{category.label}</span>
             </div>
           ))}
         </div>
