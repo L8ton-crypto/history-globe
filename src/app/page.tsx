@@ -2,6 +2,10 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { historicalSites, HistoricalSite } from '@/data/sites';
+import { importedSites } from '@/data/imported-sites';
+
+// Merge manual + imported sites
+const allSites = [...historicalSites, ...importedSites];
 import GlobeComponent from '@/components/Globe';
 import InfoPanel from '@/components/InfoPanel';
 import Controls from '@/components/Controls';
@@ -39,7 +43,7 @@ export default function Home() {
   });
 
   const filteredSites = useMemo(() => {
-    let filtered = historicalSites.filter(site => activeCategories.has(site.category));
+    let filtered = allSites.filter(site => activeCategories.has(site.category));
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(site =>
@@ -114,7 +118,7 @@ export default function Home() {
 
       {/* Controls */}
       <Controls
-        sites={historicalSites}
+        sites={allSites}
         activeCategories={activeCategories}
         searchQuery={searchQuery}
         filteredSites={filteredSites}
