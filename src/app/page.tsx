@@ -103,8 +103,8 @@ export default function Home() {
         </h1>
       </div>
 
-      {/* Globe */}
-      <div className="absolute inset-0">
+      {/* Globe - z-10 so pins stay below controls (z-40) */}
+      <div className="absolute inset-0 z-10">
         <GlobeComponent
           sites={filteredSites}
           onSiteClick={handleSiteClick}

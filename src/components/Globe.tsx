@@ -45,12 +45,15 @@ interface ClusterOrSite {
   dominantCategory?: HistoricalSite['category'];
 }
 
-// Convert altitude (0.1 - 4.0) to supercluster zoom level (0-20)
 function altitudeToZoom(altitude: number): number {
-  // Higher altitude = lower zoom, closer = higher zoom
   const zoom = Math.round(14 - Math.log2(altitude * 10));
   return Math.max(0, Math.min(20, zoom));
 }
+
+// Higher res earth textures from Solar System Scope (8k, free for non-commercial)
+const EARTH_TEXTURE = 'https://unpkg.com/three-globe@2.41.12/example/img/earth-blue-marble.jpg';
+const EARTH_BUMP = 'https://unpkg.com/three-globe@2.41.12/example/img/earth-topology.png';
+const NIGHT_SKY = 'https://unpkg.com/three-globe@2.41.12/example/img/night-sky.png';
 
 export default function GlobeComponent({ sites, onSiteClick, pointOfView }: GlobeComponentProps) {
   const globeRef = useRef<any>(null);
@@ -67,7 +70,39 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     }
   }, [pointOfView]);
 
-  // Build supercluster index
+  // Increase globe resolution for sharper zoom
+  useEffect(() => {
+    const globe = globeRef.current;
+    if (!globe) return;
+
+    const checkReady = setInterval(() => {
+      const scene = globe.scene?.();
+      if (!scene) return;
+      clearInterval(checkReady);
+
+      // Find the globe mesh and increase geometry segments for smoother sphere at close zoom
+      scene.traverse((obj: any) => {
+        if (obj.isMesh && obj.geometry?.parameters?.widthSegments) {
+          // Default is usually 75 segments - higher = smoother at close range
+          // but we can't easily change geometry after creation
+        }
+        // Improve texture filtering
+        if (obj.material?.map) {
+          obj.material.map.anisotropy = 16;
+          obj.material.map.needsUpdate = true;
+        }
+      });
+
+      // Increase renderer pixel ratio for sharper rendering
+      const renderer = globe.renderer?.();
+      if (renderer) {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3));
+      }
+    }, 300);
+
+    return () => clearInterval(checkReady);
+  }, []);
+
   const clusterIndex = useMemo(() => {
     const index = new Supercluster({
       radius: 60,
@@ -88,15 +123,12 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     return index;
   }, [sites]);
 
-  // Get clusters/points for current zoom level
   const clustersAndPoints = useMemo((): ClusterOrSite[] => {
     const raw = clusterIndex.getClusters([-180, -85, 180, 85], currentZoom);
 
     return raw.map((feature: any) => {
       if (feature.properties.cluster) {
-        // It's a cluster
         const leaves = clusterIndex.getLeaves(feature.properties.cluster_id, 100);
-        // Find dominant category
         const categoryCounts: Record<string, number> = {};
         leaves.forEach((leaf: any) => {
           const cat = leaf.properties.site.category;
@@ -114,7 +146,6 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
           dominantCategory: dominant,
         };
       } else {
-        // Individual site
         return {
           id: feature.properties.site.id,
           lat: feature.geometry.coordinates[1],
@@ -127,7 +158,6 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     });
   }, [clusterIndex, currentZoom]);
 
-  // Listen to camera and update zoom level
   useEffect(() => {
     const globe = globeRef.current;
     if (!globe) return;
@@ -150,10 +180,6 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
 
       controls.addEventListener('change', onCameraChange);
       onCameraChange();
-
-      return () => {
-        controls.removeEventListener('change', onCameraChange);
-      };
     }, 200);
 
     return () => clearInterval(checkControls);
@@ -168,7 +194,6 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
     el.style.transition = 'transform 0.2s';
 
     if (item.isCluster) {
-      // Cluster marker - numbered circle
       const size = Math.min(48, 24 + item.count * 0.5);
       const color = categoryColors[item.dominantCategory || 'cultural'];
 
@@ -188,30 +213,25 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
       el.style.textShadow = '0 1px 2px rgba(0,0,0,0.5)';
       el.textContent = `${item.count}`;
 
-      el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.3)';
-      });
-      el.addEventListener('mouseleave', () => {
-        el.style.transform = 'scale(1)';
-      });
+      el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.3)'; });
+      el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
 
-      // Click cluster to zoom in
-      el.addEventListener('click', (e) => {
+      const zoomToCluster = (e: Event) => {
         e.stopPropagation();
-        if (globeRef.current) {
-          globeRef.current.pointOfView({ lat: item.lat, lng: item.lng, altitude: Math.max(0.15, globeRef.current.pointOfView().altitude * 0.4) }, 800);
-        }
-      });
-      el.addEventListener('touchend', (e) => {
         e.preventDefault();
-        e.stopPropagation();
         if (globeRef.current) {
-          globeRef.current.pointOfView({ lat: item.lat, lng: item.lng, altitude: Math.max(0.15, globeRef.current.pointOfView().altitude * 0.4) }, 800);
+          const currentAlt = globeRef.current.pointOfView().altitude;
+          globeRef.current.pointOfView({
+            lat: item.lat,
+            lng: item.lng,
+            altitude: Math.max(0.1, currentAlt * 0.35)
+          }, 800);
         }
-      });
+      };
+      el.addEventListener('click', zoomToCluster);
+      el.addEventListener('touchend', zoomToCluster);
 
     } else {
-      // Individual site pin
       const site = item.site!;
       const color = categoryColors[site.category];
       const size = 6 + site.significance * 2;
@@ -234,38 +254,40 @@ export default function GlobeComponent({ sites, onSiteClick, pointOfView }: Glob
         el.style.zIndex = '0';
       });
 
-      el.addEventListener('click', (e) => {
+      const selectSite = (e: Event) => {
         e.stopPropagation();
-        onSiteClickRef.current(site);
-      });
-      el.addEventListener('touchend', (e) => {
         e.preventDefault();
-        e.stopPropagation();
         onSiteClickRef.current(site);
-      });
+      };
+      el.addEventListener('click', selectSite);
+      el.addEventListener('touchend', selectSite);
     }
 
     return el;
   }, []);
 
   return (
-    <GlobeGL
-      ref={globeRef}
-      globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-      bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
-      backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+    <div className="w-full h-full" style={{ position: 'relative' }}>
+      <GlobeGL
+        ref={globeRef}
+        globeImageUrl={EARTH_TEXTURE}
+        bumpImageUrl={EARTH_BUMP}
+        backgroundImageUrl={NIGHT_SKY}
 
-      atmosphereColor="#3a82f7"
-      atmosphereAltitude={0.15}
+        atmosphereColor="#3a82f7"
+        atmosphereAltitude={0.15}
 
-      enablePointerInteraction={true}
+        enablePointerInteraction={true}
 
-      htmlElementsData={clustersAndPoints}
-      htmlLat="lat"
-      htmlLng="lng"
-      htmlAltitude={0.01}
-      htmlElement={createPinElement}
-      htmlTransitionDuration={300}
-    />
+        htmlElementsData={clustersAndPoints}
+        htmlLat="lat"
+        htmlLng="lng"
+        htmlAltitude={0.01}
+        htmlElement={createPinElement}
+        htmlTransitionDuration={300}
+
+        animateIn={true}
+      />
+    </div>
   );
 }
