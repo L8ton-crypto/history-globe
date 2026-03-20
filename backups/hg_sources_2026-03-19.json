@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "name": "manual",
+    "display_name": "Hand-curated",
+    "url": null,
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 2,
+    "name": "cadw",
+    "display_name": "Cadw (Welsh Government)",
+    "url": "https://cadw.gov.wales",
+    "last_imported_at": "2026-03-19T14:20:18.093Z",
+    "site_count": 4174,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 3,
+    "name": "unesco",
+    "display_name": "UNESCO World Heritage",
+    "url": "https://whc.unesco.org",
+    "last_imported_at": "2026-03-19T14:20:18.188Z",
+    "site_count": 1247,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 4,
+    "name": "english_heritage",
+    "display_name": "English Heritage",
+    "url": "https://www.english-heritage.org.uk",
+    "last_imported_at": "2026-03-19T18:41:17.906Z",
+    "site_count": 398,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 5,
+    "name": "historic_england",
+    "display_name": "Historic England",
+    "url": "https://historicengland.org.uk",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 6,
+    "name": "national_trust",
+    "display_name": "National Trust",
+    "url": "https://www.nationaltrust.org.uk",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 7,
+    "name": "historic_scotland",
+    "display_name": "Historic Environment Scotland",
+    "url": "https://www.historicenvironment.scot",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  }
+]

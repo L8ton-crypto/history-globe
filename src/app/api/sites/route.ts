@@ -76,6 +76,9 @@ export async function GET(request: NextRequest) {
       `;
     }
 
+    // Get the real total count in the database
+    const totalCount = await getSql()`SELECT COUNT(*)::int as count FROM hg_sites`;
+
     return NextResponse.json({
       sites: sites.map(s => ({
         id: s.external_id || `db-${s.id}`,
@@ -94,6 +97,7 @@ export async function GET(request: NextRequest) {
         significance: s.significance || 3,
       })),
       total: sites.length,
+      totalAll: totalCount[0].count,
       zoom,
     }, {
       headers: {

@@ -20,6 +20,7 @@ export function useSites(bounds: Bounds | null, options: UseSitesOptions = {}) {
   const [sites, setSites] = useState<HistoricalSite[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
+  const [totalAll, setTotalAll] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const lastFetchKey = useRef('');
 
@@ -57,6 +58,7 @@ export function useSites(bounds: Bounds | null, options: UseSitesOptions = {}) {
       const data = await response.json();
       setSites(data.sites);
       setTotal(data.total);
+      setTotalAll(data.totalAll || data.total);
     } catch (e: any) {
       if (e.name !== 'AbortError') {
         console.error('Failed to fetch sites:', e);
@@ -77,5 +79,5 @@ export function useSites(bounds: Bounds | null, options: UseSitesOptions = {}) {
     return () => clearTimeout(timeout);
   }, [bounds, options.category, options.search, fetchSites]);
 
-  return { sites, loading, total };
+  return { sites, loading, total, totalAll };
 }

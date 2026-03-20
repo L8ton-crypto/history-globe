@@ -49,7 +49,7 @@ export default function Home() {
     search: searchQuery.trim() || undefined,
   }), [searchQuery]);
 
-  const { sites: dbSites, loading, total } = useSites(bounds, fetchOptions);
+  const { sites: dbSites, loading, total, totalAll } = useSites(bounds, fetchOptions);
 
   // Filter by active categories on the client side
   const filteredSites = useMemo(() => {
@@ -146,7 +146,7 @@ export default function Home() {
       {/* Category Legend - desktop only */}
       <div className="hidden md:block fixed bottom-4 left-4 z-30 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3">
         <div className="text-white/60 text-xs font-medium mb-2">
-          {total > 0 ? `${filteredSites.length} sites in view` : 'Legend'}
+          {total > 0 ? `${filteredSites.length.toLocaleString()} of ${totalAll.toLocaleString()} sites` : 'Legend'}
         </div>
         <div className="grid grid-cols-1 gap-1.5 text-xs">
           {categories.map(category => (
