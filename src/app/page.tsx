@@ -136,6 +136,7 @@ export default function Home() {
         activeCategories={activeCategories}
         searchQuery={searchQuery}
         filteredSites={filteredSites}
+        totalAll={totalAll}
         onCategoryToggle={handleCategoryToggle}
         onSearchChange={setSearchQuery}
         onSiteSelect={handleSiteClick}

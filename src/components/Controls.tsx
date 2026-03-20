@@ -8,6 +8,7 @@ interface ControlsProps {
   activeCategories: Set<HistoricalSite['category']>;
   searchQuery: string;
   filteredSites: HistoricalSite[];
+  totalAll?: number;
   onCategoryToggle: (category: HistoricalSite['category']) => void;
   onSearchChange: (query: string) => void;
   onSiteSelect: (site: HistoricalSite) => void;
@@ -34,6 +35,7 @@ export default function Controls({
   activeCategories,
   searchQuery,
   filteredSites,
+  totalAll,
   onCategoryToggle,
   onSearchChange,
   onSiteSelect,
@@ -108,7 +110,7 @@ export default function Controls({
 
         {/* Site counter - always visible */}
         <div className="text-white/50 text-xs mt-2 px-1">
-          {filteredSites.length} of {sites.length} sites
+          {filteredSites.length.toLocaleString()} of {(totalAll || sites.length).toLocaleString()} sites
         </div>
       </div>
 
