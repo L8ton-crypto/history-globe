@@ -6,9 +6,9 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { HistoricalSite } from '@/data/sites';
 
 interface GlobeComponentProps {
-  sites: HistoricalSite[];
-  onSiteClick: (site: HistoricalSite) => void;
-  onBoundsChange?: (bounds: { south: number; north: number; west: number; east: number; zoom: number }) => void;
+  geojson: GeoJSON.FeatureCollection | null;
+  activeCategories: Set<HistoricalSite['category']>;
+  onSiteClick: (dbId: number) => void;
   pointOfView?: {
     lat: number;
     lng: number;
@@ -16,35 +16,17 @@ interface GlobeComponentProps {
   };
 }
 
-const categoryColors: Record<HistoricalSite['category'], string> = {
-  roman: '#DC2626',
-  medieval: '#2563EB',
-  ancient: '#D97706',
-  natural: '#16A34A',
-  cultural: '#9333EA',
-  industrial: '#F97316',
-  religious: '#EC4899'
-};
-
 function altitudeToZoom(altitude: number): number {
   return Math.max(1, Math.min(18, 10 - Math.log2(altitude * 5)));
 }
 
-export default function GlobeComponent({ sites, onSiteClick, onBoundsChange, pointOfView }: GlobeComponentProps) {
+export default function GlobeComponent({ geojson, activeCategories, onSiteClick, pointOfView }: GlobeComponentProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const onSiteClickRef = useRef(onSiteClick);
-  const onBoundsChangeRef = useRef(onBoundsChange);
-  const sitesMapRef = useRef<Map<string, HistoricalSite>>(new Map());
+  const sourceReady = useRef(false);
 
   useEffect(() => { onSiteClickRef.current = onSiteClick; }, [onSiteClick]);
-  useEffect(() => { onBoundsChangeRef.current = onBoundsChange; }, [onBoundsChange]);
-
-  useEffect(() => {
-    const m = new Map<string, HistoricalSite>();
-    sites.forEach(s => m.set(s.id, s));
-    sitesMapRef.current = m;
-  }, [sites]);
 
   // Initialize map
   useEffect(() => {
@@ -75,7 +57,7 @@ export default function GlobeComponent({ sites, onSiteClick, onBoundsChange, poi
     });
 
     m.on('load', () => {
-      // GeoJSON source with clustering
+      // GeoJSON source with clustering - data set later
       m.addSource('sites', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -134,7 +116,7 @@ export default function GlobeComponent({ sites, onSiteClick, onBoundsChange, poi
         }
       });
 
-      // Click handlers
+      // Click: clusters zoom in
       m.on('click', 'clusters', (e) => {
         const features = m.queryRenderedFeatures(e.point, { layers: ['clusters'] });
         if (!features.length) return;
@@ -149,12 +131,12 @@ export default function GlobeComponent({ sites, onSiteClick, onBoundsChange, poi
         });
       });
 
+      // Click: individual pin -> fetch details
       m.on('click', 'unclustered-point', (e) => {
         const features = m.queryRenderedFeatures(e.point, { layers: ['unclustered-point'] });
         if (!features.length) return;
-        const siteId = features[0].properties?.id;
-        const site = sitesMapRef.current.get(siteId);
-        if (site) onSiteClickRef.current(site);
+        const dbId = features[0].properties?.dbId;
+        if (dbId) onSiteClickRef.current(dbId);
       });
 
       // Cursors
@@ -177,24 +159,8 @@ export default function GlobeComponent({ sites, onSiteClick, onBoundsChange, poi
       });
       m.on('mouseleave', 'unclustered-point', () => { popup.remove(); });
 
-      // Report initial bounds
-      reportBounds(m);
+      sourceReady.current = true;
     });
-
-    // Report bounds on move
-    const reportBounds = (map: mapboxgl.Map) => {
-      const bounds = map.getBounds();
-      if (!bounds) return;
-      onBoundsChangeRef.current?.({
-        south: bounds.getSouth(),
-        north: bounds.getNorth(),
-        west: bounds.getWest(),
-        east: bounds.getEast(),
-        zoom: Math.round(map.getZoom()),
-      });
-    };
-
-    m.on('moveend', () => reportBounds(m));
 
     m.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'bottom-right');
 
@@ -203,31 +169,24 @@ export default function GlobeComponent({ sites, onSiteClick, onBoundsChange, poi
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update GeoJSON data when sites change
+  // Update GeoJSON data when geojson or category filters change
   useEffect(() => {
     const m = map.current;
-    if (!m || !m.isStyleLoaded()) return;
+    if (!m || !sourceReady.current || !geojson) return;
 
     const source = m.getSource('sites') as mapboxgl.GeoJSONSource | undefined;
     if (!source) return;
 
-    const geojson: GeoJSON.FeatureCollection = {
+    // Filter by active categories client-side
+    const filtered: GeoJSON.FeatureCollection = {
       type: 'FeatureCollection',
-      features: sites.map(site => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [site.lng, site.lat] },
-        properties: {
-          id: site.id,
-          name: site.name,
-          category: site.category,
-          significance: site.significance,
-          color: categoryColors[site.category],
-        }
-      }))
+      features: geojson.features.filter(f => 
+        activeCategories.has(f.properties?.category as HistoricalSite['category'])
+      )
     };
 
-    source.setData(geojson);
-  }, [sites]);
+    source.setData(filtered);
+  }, [geojson, activeCategories]);
 
   // Fly to point of view
   useEffect(() => {

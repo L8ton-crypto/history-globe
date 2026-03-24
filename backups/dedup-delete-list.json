@@ -1,0 +1,572 @@
+[
+  {
+    "id": 24622,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Spain",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 29041,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Italy",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 33283,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Germany",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 38566,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Belgium",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 42724,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Austria",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 43688,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Switzerland",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 45508,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Poland",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 46274,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Czech Republic",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 51240,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Romania",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 52205,
+    "reason": "duplicate external_id wd-Q156011",
+    "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe",
+    "country": "Croatia",
+    "keeping": {
+      "id": 21104,
+      "name": "Ancient and Primeval Beech Forests of the Carpathians and Other Regions of Europe"
+    }
+  },
+  {
+    "id": 33345,
+    "reason": "duplicate external_id wd-Q16064866",
+    "name": "The Great Spa Towns of Europe",
+    "country": "Germany",
+    "keeping": {
+      "id": 21214,
+      "name": "The Great Spa Towns of Europe"
+    }
+  },
+  {
+    "id": 38611,
+    "reason": "duplicate external_id wd-Q16064866",
+    "name": "The Great Spa Towns of Europe",
+    "country": "Belgium",
+    "keeping": {
+      "id": 21214,
+      "name": "The Great Spa Towns of Europe"
+    }
+  },
+  {
+    "id": 42727,
+    "reason": "duplicate external_id wd-Q16064866",
+    "name": "The Great Spa Towns of Europe",
+    "country": "Austria",
+    "keeping": {
+      "id": 21214,
+      "name": "The Great Spa Towns of Europe"
+    }
+  },
+  {
+    "id": 46282,
+    "reason": "duplicate external_id wd-Q16064866",
+    "name": "The Great Spa Towns of Europe",
+    "country": "Czech Republic",
+    "keeping": {
+      "id": 21214,
+      "name": "The Great Spa Towns of Europe"
+    }
+  },
+  {
+    "id": 33300,
+    "reason": "duplicate external_id wd-Q55619850",
+    "name": "The Architectural Work of Le Corbusier",
+    "country": "Germany",
+    "keeping": {
+      "id": 21122,
+      "name": "The Architectural Work of Le Corbusier"
+    }
+  },
+  {
+    "id": 38613,
+    "reason": "duplicate external_id wd-Q55619850",
+    "name": "The Architectural Work of Le Corbusier",
+    "country": "Belgium",
+    "keeping": {
+      "id": 21122,
+      "name": "The Architectural Work of Le Corbusier"
+    }
+  },
+  {
+    "id": 43696,
+    "reason": "duplicate external_id wd-Q55619850",
+    "name": "The Architectural Work of Le Corbusier",
+    "country": "Switzerland",
+    "keeping": {
+      "id": 21122,
+      "name": "The Architectural Work of Le Corbusier"
+    }
+  },
+  {
+    "id": 33317,
+    "reason": "duplicate external_id wd-Q4580",
+    "name": "prehistoric pile dwellings around the Alps",
+    "country": "Germany",
+    "keeping": {
+      "id": 21144,
+      "name": "prehistoric pile dwellings around the Alps"
+    }
+  },
+  {
+    "id": 42728,
+    "reason": "duplicate external_id wd-Q4580",
+    "name": "prehistoric pile dwellings around the Alps",
+    "country": "Austria",
+    "keeping": {
+      "id": 21144,
+      "name": "prehistoric pile dwellings around the Alps"
+    }
+  },
+  {
+    "id": 43697,
+    "reason": "duplicate external_id wd-Q4580",
+    "name": "prehistoric pile dwellings around the Alps",
+    "country": "Switzerland",
+    "keeping": {
+      "id": 21144,
+      "name": "prehistoric pile dwellings around the Alps"
+    }
+  },
+  {
+    "id": 37380,
+    "reason": "duplicate external_id wd-Q64590476",
+    "name": "Wadden Sea",
+    "country": "Netherlands",
+    "keeping": {
+      "id": 33302,
+      "name": "Wadden Sea"
+    }
+  },
+  {
+    "id": 45887,
+    "reason": "duplicate external_id wd-Q9386617",
+    "name": "Cieszyn Castle",
+    "country": "Czech Republic",
+    "keeping": {
+      "id": 43829,
+      "name": "Cieszyn Castle"
+    }
+  },
+  {
+    "id": 46280,
+    "reason": "duplicate external_id wd-Q1945612",
+    "name": "Ore Mountain Mining Region",
+    "country": "Czech Republic",
+    "keeping": {
+      "id": 33337,
+      "name": "Ore Mountain Mining Region"
+    }
+  },
+  {
+    "id": 45509,
+    "reason": "duplicate external_id wd-Q156308",
+    "name": "Muskau Park",
+    "country": "Poland",
+    "keeping": {
+      "id": 33285,
+      "name": "Muskau Park"
+    }
+  },
+  {
+    "id": 37376,
+    "reason": "duplicate external_id wd-Q1265889",
+    "name": "Lower German Limes",
+    "country": "Netherlands",
+    "keeping": {
+      "id": 33330,
+      "name": "Lower German Limes"
+    }
+  },
+  {
+    "id": 52207,
+    "reason": "duplicate external_id wd-Q32797097",
+    "name": "The Venetian Works of defence between 15th and 17th centuries",
+    "country": "Croatia",
+    "keeping": {
+      "id": 29093,
+      "name": "The Venetian Works of defence between 15th and 17th centuries"
+    }
+  },
+  {
+    "id": 34386,
+    "reason": "duplicate external_id wd-Q39258498",
+    "name": "Prehistoric Rock-Art Site of the Côa Valley and Siega Verde",
+    "country": "Portugal",
+    "keeping": {
+      "id": 24650,
+      "name": "Prehistoric Rock-Art Site of the Côa Valley and Siega Verde"
+    }
+  },
+  {
+    "id": 49486,
+    "reason": "duplicate external_id wd-Q6396",
+    "name": "Neusiedl Lake",
+    "country": "Hungary",
+    "keeping": {
+      "id": 42729,
+      "name": "Neusiedl Lake"
+    }
+  },
+  {
+    "id": 24645,
+    "reason": "duplicate external_id wd-Q8554028",
+    "name": "Monte Perdido Massif",
+    "country": "Spain",
+    "keeping": {
+      "id": 21208,
+      "name": "Monte Perdido Massif"
+    }
+  },
+  {
+    "id": 24635,
+    "reason": "duplicate external_id wd-Q3411434",
+    "name": "Pyrénées – Mont Perdu World Heritage Site",
+    "country": "Spain",
+    "keeping": {
+      "id": 21200,
+      "name": "Pyrénées – Mont Perdu World Heritage Site"
+    }
+  },
+  {
+    "id": 43695,
+    "reason": "duplicate external_id wd-Q3485435",
+    "name": "Monte San Giorgio site fossils",
+    "country": "Switzerland",
+    "keeping": {
+      "id": 29063,
+      "name": "Monte San Giorgio site fossils"
+    }
+  },
+  {
+    "id": 35480,
+    "reason": "duplicate external_id wd-Q1013928",
+    "name": "Burg Schwanau",
+    "country": "Germany",
+    "keeping": {
+      "id": 13927,
+      "name": "Burg Schwanau"
+    }
+  },
+  {
+    "id": 48950,
+    "reason": "duplicate external_id wd-Q192243",
+    "name": "Struve Geodetic Arc",
+    "country": "Norway",
+    "keeping": {
+      "id": 48450,
+      "name": "Struve Geodetic Arc"
+    }
+  },
+  {
+    "id": 45633,
+    "reason": "duplicate external_id wd-Q1015753",
+    "name": "Burgstall Großer Osser",
+    "country": "Czech Republic",
+    "keeping": {
+      "id": 31102,
+      "name": "Burgstall Großer Osser"
+    }
+  },
+  {
+    "id": 43576,
+    "reason": "duplicate external_id wd-Q3320270",
+    "name": "Condat Abbey",
+    "country": "Switzerland",
+    "keeping": {
+      "id": 15476,
+      "name": "Condat Abbey"
+    }
+  },
+  {
+    "id": 8054,
+    "reason": "same name+coords+country: \"Avebury\" at (51.428611111, -1.854166666)",
+    "name": "Avebury",
+    "country": "England",
+    "keeping": {
+      "id": 5686,
+      "name": "Avebury"
+    }
+  },
+  {
+    "id": 13461,
+    "reason": "same name+coords+country: \"Cascumpeque Light\" at (46.799, -64.0369)",
+    "name": "Cascumpeque Light",
+    "country": "United States",
+    "keeping": {
+      "id": 13303,
+      "name": "Cascumpeque Light"
+    }
+  },
+  {
+    "id": 48944,
+    "reason": "same name+coords+country: \"Glåpen Lighthouse\" at (67.88722222, 13.03611111)",
+    "name": "Glåpen Lighthouse",
+    "country": "Norway",
+    "keeping": {
+      "id": 48872,
+      "name": "Glåpen Lighthouse"
+    }
+  },
+  {
+    "id": 8104,
+    "reason": "same name+coords+country: \"Hardwick Hall\" at (53.168777, -1.308742)",
+    "name": "Hardwick Hall",
+    "country": "England",
+    "keeping": {
+      "id": 5667,
+      "name": "Hardwick Hall"
+    }
+  },
+  {
+    "id": 48940,
+    "reason": "same name+coords+country: \"Hestskjær Lighthouse\" at (63.084583, 7.492278)",
+    "name": "Hestskjær Lighthouse",
+    "country": "Norway",
+    "keeping": {
+      "id": 48777,
+      "name": "Hestskjær Lighthouse"
+    }
+  },
+  {
+    "id": 8421,
+    "reason": "same name+coords+country: \"Housesteads Roman Fort\" at (55.013, -2.331)",
+    "name": "Housesteads Roman Fort",
+    "country": "England",
+    "keeping": {
+      "id": 5814,
+      "name": "Housesteads Roman Fort"
+    }
+  },
+  {
+    "id": 8043,
+    "reason": "same name+coords+country: \"Kenilworth Castle\" at (52.347, -1.59111)",
+    "name": "Kenilworth Castle",
+    "country": "England",
+    "keeping": {
+      "id": 5779,
+      "name": "Kenilworth Castle"
+    }
+  },
+  {
+    "id": 8420,
+    "reason": "same name+coords+country: \"Letocetum\" at (52.6569, -1.8565)",
+    "name": "Letocetum",
+    "country": "England",
+    "keeping": {
+      "id": 5543,
+      "name": "Letocetum"
+    }
+  },
+  {
+    "id": 26329,
+    "reason": "same name+coords+country: \"Monastero dell'Ordine della Visitazione di S. Maria\" at (45.733631, 9.726665)",
+    "name": "Monastero dell'Ordine della Visitazione di S. Maria",
+    "country": "Italy",
+    "keeping": {
+      "id": 26321,
+      "name": "Monastero dell'Ordine della Visitazione di S. Maria"
+    }
+  },
+  {
+    "id": 38618,
+    "reason": "same name+coords+country: \"National Theatre of Northern Greece\" at (40.626650136, 22.949552085)",
+    "name": "National Theatre of Northern Greece",
+    "country": "Greece",
+    "keeping": {
+      "id": 38762,
+      "name": "National Theatre of Northern Greece"
+    }
+  },
+  {
+    "id": 48943,
+    "reason": "same name+coords+country: \"Nyholmen Lighthouse\" at (67.28611111, 14.36472222)",
+    "name": "Nyholmen Lighthouse",
+    "country": "Norway",
+    "keeping": {
+      "id": 48884,
+      "name": "Nyholmen Lighthouse"
+    }
+  },
+  {
+    "id": 48941,
+    "reason": "same name+coords+country: \"Odderøya Lighthouse\" at (58.131397, 8.002202)",
+    "name": "Odderøya Lighthouse",
+    "country": "Norway",
+    "keeping": {
+      "id": 48802,
+      "name": "Odderøya Lighthouse"
+    }
+  },
+  {
+    "id": 8424,
+    "reason": "same name+coords+country: \"Old Soar Manor\" at (51.2631, 0.319816)",
+    "name": "Old Soar Manor",
+    "country": "England",
+    "keeping": {
+      "id": 5582,
+      "name": "Old Soar Manor"
+    }
+  },
+  {
+    "id": 28756,
+    "reason": "same name+coords+country: \"Punta del Diavolo Lighthouse\" at (42.106546, 15.477274)",
+    "name": "Punta del Diavolo Lighthouse",
+    "country": "Italy",
+    "keeping": {
+      "id": 28725,
+      "name": "Punta del Diavolo Lighthouse"
+    }
+  },
+  {
+    "id": 15708,
+    "reason": "same name+coords+country: \"Saint-Papoul Cathedral\" at (43.330919, 2.033813)",
+    "name": "Saint-Papoul Cathedral",
+    "country": "France",
+    "keeping": {
+      "id": 15374,
+      "name": "Saint-Papoul Cathedral"
+    }
+  },
+  {
+    "id": 8427,
+    "reason": "same name+coords+country: \"Stonehenge\" at (51.178888888, -1.826111111)",
+    "name": "Stonehenge",
+    "country": "England",
+    "keeping": {
+      "id": 5616,
+      "name": "Stonehenge"
+    }
+  },
+  {
+    "id": 8419,
+    "reason": "same name+coords+country: \"Uffington White Horse\" at (51.5777, -1.56675)",
+    "name": "Uffington White Horse",
+    "country": "England",
+    "keeping": {
+      "id": 5457,
+      "name": "Uffington White Horse"
+    }
+  },
+  {
+    "id": 8415,
+    "reason": "same name+coords+country: \"Yarn Market, Dunster\" at (51.1846, -3.44426)",
+    "name": "Yarn Market, Dunster",
+    "country": "England",
+    "keeping": {
+      "id": 5786,
+      "name": "Yarn Market, Dunster"
+    }
+  },
+  {
+    "id": 19553,
+    "reason": "same name+coords+country: \"fortifications protohistoriques d'Abarratia\" at (43.35823, -1.23263)",
+    "name": "fortifications protohistoriques d'Abarratia",
+    "country": "France",
+    "keeping": {
+      "id": 19550,
+      "name": "fortifications protohistoriques d'Abarratia"
+    }
+  },
+  {
+    "id": 19556,
+    "reason": "same name+coords+country: \"fortifications protohistoriques de Quarraquey\" at (43.22272, -1.33372)",
+    "name": "fortifications protohistoriques de Quarraquey",
+    "country": "France",
+    "keeping": {
+      "id": 19555,
+      "name": "fortifications protohistoriques de Quarraquey"
+    }
+  },
+  {
+    "id": 17682,
+    "reason": "same name+coords+country: \"pont-aqueduc de la Jeurre\" at (48.48038, 2.1932)",
+    "name": "pont-aqueduc de la Jeurre",
+    "country": "France",
+    "keeping": {
+      "id": 17681,
+      "name": "pont-aqueduc de la Jeurre"
+    }
+  },
+  {
+    "id": 20122,
+    "reason": "same name+coords+country: \"Île d'Yeu lighthouse\" at (46.7175, -2.382222222)",
+    "name": "Île d'Yeu lighthouse",
+    "country": "France",
+    "keeping": {
+      "id": 19986,
+      "name": "Île d'Yeu lighthouse"
+    }
+  }
+]

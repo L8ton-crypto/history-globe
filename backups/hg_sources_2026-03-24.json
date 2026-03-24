@@ -1,0 +1,245 @@
+[
+  {
+    "id": 1,
+    "name": "manual",
+    "display_name": "Hand-curated",
+    "url": null,
+    "last_imported_at": "2026-03-19T18:53:21.166Z",
+    "site_count": 14,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 2,
+    "name": "cadw",
+    "display_name": "Cadw (Welsh Government)",
+    "url": "https://cadw.gov.wales",
+    "last_imported_at": "2026-03-19T14:20:18.093Z",
+    "site_count": 4174,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 3,
+    "name": "unesco",
+    "display_name": "UNESCO World Heritage",
+    "url": "https://whc.unesco.org",
+    "last_imported_at": "2026-03-19T14:20:18.188Z",
+    "site_count": 1247,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 4,
+    "name": "english_heritage",
+    "display_name": "English Heritage",
+    "url": "https://www.english-heritage.org.uk",
+    "last_imported_at": "2026-03-19T18:41:17.906Z",
+    "site_count": 398,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 5,
+    "name": "historic_england",
+    "display_name": "Historic England",
+    "url": "https://historicengland.org.uk",
+    "last_imported_at": "2026-03-19T19:08:17.230Z",
+    "site_count": 937,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 6,
+    "name": "national_trust",
+    "display_name": "National Trust",
+    "url": "https://www.nationaltrust.org.uk",
+    "last_imported_at": "2026-03-20T10:49:21.924Z",
+    "site_count": 384,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 7,
+    "name": "historic_scotland",
+    "display_name": "Historic Environment Scotland",
+    "url": "https://www.historicenvironment.scot",
+    "last_imported_at": "2026-03-20T14:31:45.507Z",
+    "site_count": 1334,
+    "created_at": "2026-03-19T14:09:40.247Z"
+  },
+  {
+    "id": 8,
+    "name": "wikidata-ireland",
+    "display_name": "Wikidata (Ireland)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-20T06:58:36.966Z"
+  },
+  {
+    "id": 9,
+    "name": "wikidata-france",
+    "display_name": "Wikidata (France)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T10:57:13.807Z"
+  },
+  {
+    "id": 10,
+    "name": "wikidata-spain",
+    "display_name": "Wikidata (Spain)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T11:19:11.529Z"
+  },
+  {
+    "id": 11,
+    "name": "wikidata-italy",
+    "display_name": "Wikidata (Italy)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T11:25:52.027Z"
+  },
+  {
+    "id": 12,
+    "name": "wikidata-germany",
+    "display_name": "Wikidata (Germany)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T11:34:04.238Z"
+  },
+  {
+    "id": 13,
+    "name": "wikidata-portugal",
+    "display_name": "Wikidata (Portugal)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T11:46:58.043Z"
+  },
+  {
+    "id": 14,
+    "name": "wikidata-netherlands",
+    "display_name": "Wikidata (Netherlands)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T11:49:31.242Z"
+  },
+  {
+    "id": 15,
+    "name": "wikidata-belgium",
+    "display_name": "Wikidata (Belgium)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:00:15.813Z"
+  },
+  {
+    "id": 16,
+    "name": "wikidata-greece",
+    "display_name": "Wikidata (Greece)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:02:52.079Z"
+  },
+  {
+    "id": 17,
+    "name": "wikidata-austria",
+    "display_name": "Wikidata (Austria)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:14:39.987Z"
+  },
+  {
+    "id": 18,
+    "name": "wikidata-switzerland",
+    "display_name": "Wikidata (Switzerland)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:17:24.595Z"
+  },
+  {
+    "id": 19,
+    "name": "wikidata-poland",
+    "display_name": "Wikidata (Poland)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:19:26.375Z"
+  },
+  {
+    "id": 20,
+    "name": "wikidata-czech-republic",
+    "display_name": "Wikidata (Czech Republic)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:31:31.438Z"
+  },
+  {
+    "id": 21,
+    "name": "wikidata-denmark",
+    "display_name": "Wikidata (Denmark)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:33:11.317Z"
+  },
+  {
+    "id": 22,
+    "name": "wikidata-sweden",
+    "display_name": "Wikidata (Sweden)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:34:37.481Z"
+  },
+  {
+    "id": 23,
+    "name": "wikidata-norway",
+    "display_name": "Wikidata (Norway)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:48:26.900Z"
+  },
+  {
+    "id": 24,
+    "name": "wikidata-hungary",
+    "display_name": "Wikidata (Hungary)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T12:49:54.266Z"
+  },
+  {
+    "id": 25,
+    "name": "wikidata-romania",
+    "display_name": "Wikidata (Romania)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T13:06:26.200Z"
+  },
+  {
+    "id": 26,
+    "name": "wikidata-croatia",
+    "display_name": "Wikidata (Croatia)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T13:20:56.312Z"
+  },
+  {
+    "id": 27,
+    "name": "wikidata-turkey",
+    "display_name": "Wikidata (Turkey)",
+    "url": "https://www.wikidata.org",
+    "last_imported_at": null,
+    "site_count": 0,
+    "created_at": "2026-03-24T13:38:49.798Z"
+  }
+]

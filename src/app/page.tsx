@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { HistoricalSite } from '@/data/sites';
-import { useSites } from '@/hooks/useSites';
+import { useStaticSites } from '@/hooks/useStaticSites';
 import GlobeComponent from '@/components/Globe';
 import InfoPanel from '@/components/InfoPanel';
 import Controls from '@/components/Controls';
@@ -27,34 +27,48 @@ const categories = [
   { key: 'religious' as const, label: 'Religious' },
 ];
 
-interface Bounds {
-  south: number;
-  north: number;
-  west: number;
-  east: number;
-  zoom: number;
-}
-
 export default function Home() {
   const [selectedSite, setSelectedSite] = useState<HistoricalSite | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<HistoricalSite['category']>>(
     new Set(['roman', 'medieval', 'ancient', 'natural', 'cultural', 'industrial', 'religious'])
   );
   const [searchQuery, setSearchQuery] = useState('');
-  const [bounds, setBounds] = useState<Bounds | null>(null);
   const [pointOfView, setPointOfView] = useState<{lat: number; lng: number; altitude: number} | undefined>(undefined);
 
-  // Fetch sites from database based on current viewport
-  const fetchOptions = useMemo(() => ({
-    search: searchQuery.trim() || undefined,
-  }), [searchQuery]);
+  const { geojson, loading, totalAll, fetchSiteDetail } = useStaticSites();
 
-  const { sites: dbSites, loading, total, totalAll } = useSites(bounds, fetchOptions);
+  // For Controls search results - filter from GeoJSON features
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim() || !geojson) return [];
+    const q = searchQuery.toLowerCase();
+    return geojson.features
+      .filter(f => f.properties?.name?.toLowerCase().includes(q))
+      .slice(0, 50)
+      .map(f => ({
+        id: f.properties!.id,
+        name: f.properties!.name,
+        lat: (f.geometry as GeoJSON.Point).coordinates[1],
+        lng: (f.geometry as GeoJSON.Point).coordinates[0],
+        category: f.properties!.category as HistoricalSite['category'],
+        era: '',
+        shortDescription: '',
+        longDescription: '',
+        imageUrl: '',
+        wikiUrl: '',
+        country: f.properties!.country || '',
+        region: '',
+        unesco: false,
+        significance: f.properties!.significance || 3,
+      })) as HistoricalSite[];
+  }, [searchQuery, geojson]);
 
-  // Filter by active categories on the client side
-  const filteredSites = useMemo(() => {
-    return dbSites.filter(site => activeCategories.has(site.category));
-  }, [dbSites, activeCategories]);
+  // Count filtered sites for display
+  const filteredCount = useMemo(() => {
+    if (!geojson) return 0;
+    return geojson.features.filter(f => 
+      activeCategories.has(f.properties?.category as HistoricalSite['category'])
+    ).length;
+  }, [geojson, activeCategories]);
 
   const handleCategoryToggle = useCallback((category: HistoricalSite['category']) => {
     setActiveCategories(prev => {
@@ -68,13 +82,22 @@ export default function Home() {
     });
   }, []);
 
-  const handleSiteClick = useCallback((site: HistoricalSite) => {
-    setSelectedSite(site);
-  }, []);
+  const handleSiteClick = useCallback(async (dbId: number) => {
+    const site = await fetchSiteDetail(dbId);
+    if (site) setSelectedSite(site);
+  }, [fetchSiteDetail]);
 
-  const handleBoundsChange = useCallback((newBounds: Bounds) => {
-    setBounds(newBounds);
-  }, []);
+  const handleSearchSiteSelect = useCallback((site: HistoricalSite) => {
+    // Fly to site and show info
+    setPointOfView({ lat: site.lat, lng: site.lng, altitude: 0.5 });
+    // Also fetch full details
+    const dbIdMatch = site.id.match(/^db-(\d+)$/);
+    if (dbIdMatch) {
+      fetchSiteDetail(parseInt(dbIdMatch[1])).then(full => {
+        if (full) setSelectedSite(full);
+      });
+    }
+  }, [fetchSiteDetail]);
 
   const handleNearMe = useCallback(() => {
     if ('geolocation' in navigator) {
@@ -115,7 +138,7 @@ export default function Home() {
       {loading && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
           <div className="bg-black/60 backdrop-blur px-3 py-1 rounded-full text-white/70 text-xs">
-            Loading sites...
+            Loading {totalAll > 0 ? `${totalAll.toLocaleString()} sites` : 'sites'}...
           </div>
         </div>
       )}
@@ -123,23 +146,23 @@ export default function Home() {
       {/* Globe */}
       <div className="absolute inset-0 z-10">
         <GlobeComponent
-          sites={filteredSites}
+          geojson={geojson}
+          activeCategories={activeCategories}
           onSiteClick={handleSiteClick}
-          onBoundsChange={handleBoundsChange}
           pointOfView={pointOfView}
         />
       </div>
 
       {/* Controls */}
       <Controls
-        sites={filteredSites}
+        sites={searchResults}
         activeCategories={activeCategories}
         searchQuery={searchQuery}
-        filteredSites={filteredSites}
+        filteredSites={searchResults}
         totalAll={totalAll}
         onCategoryToggle={handleCategoryToggle}
         onSearchChange={setSearchQuery}
-        onSiteSelect={handleSiteClick}
+        onSiteSelect={handleSearchSiteSelect}
         onNearMe={handleNearMe}
         onResetView={handleResetView}
       />
@@ -147,7 +170,7 @@ export default function Home() {
       {/* Category Legend - desktop only */}
       <div className="hidden md:block fixed bottom-4 left-4 z-30 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3">
         <div className="text-white/60 text-xs font-medium mb-2">
-          {total > 0 ? `${filteredSites.length.toLocaleString()} of ${totalAll.toLocaleString()} sites` : 'Legend'}
+          {filteredCount.toLocaleString()} of {totalAll.toLocaleString()} sites
         </div>
         <div className="grid grid-cols-1 gap-1.5 text-xs">
           {categories.map(category => (
