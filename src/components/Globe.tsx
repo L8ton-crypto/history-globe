@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { HistoricalSite } from '@/data/sites';
@@ -24,7 +24,7 @@ export default function GlobeComponent({ geojson, activeCategories, onSiteClick,
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const onSiteClickRef = useRef(onSiteClick);
-  const sourceReady = useRef(false);
+  const [sourceReady, setSourceReady] = useState(false);
 
   useEffect(() => { onSiteClickRef.current = onSiteClick; }, [onSiteClick]);
 
@@ -159,7 +159,7 @@ export default function GlobeComponent({ geojson, activeCategories, onSiteClick,
       });
       m.on('mouseleave', 'unclustered-point', () => { popup.remove(); });
 
-      sourceReady.current = true;
+      setSourceReady(true);
     });
 
     m.addControl(new mapboxgl.NavigationControl({ showCompass: true }), 'bottom-right');
@@ -172,7 +172,7 @@ export default function GlobeComponent({ geojson, activeCategories, onSiteClick,
   // Update GeoJSON data when geojson or category filters change
   useEffect(() => {
     const m = map.current;
-    if (!m || !sourceReady.current || !geojson) return;
+    if (!m || !sourceReady || !geojson) return;
 
     const source = m.getSource('sites') as mapboxgl.GeoJSONSource | undefined;
     if (!source) return;
@@ -186,7 +186,7 @@ export default function GlobeComponent({ geojson, activeCategories, onSiteClick,
     };
 
     source.setData(filtered);
-  }, [geojson, activeCategories]);
+  }, [geojson, activeCategories, sourceReady]);
 
   // Fly to point of view
   useEffect(() => {
